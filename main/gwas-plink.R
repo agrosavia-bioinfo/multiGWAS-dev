@@ -85,19 +85,19 @@ runPlink <- function (params, geneAction, outFile, tmpId="")
 
 	# Naive or FUll GWAS model
 	if (model=="naive") { 
-		cmm=sprintf ("%s/sources/scripts/script-plink-NaiveModel.sh %s %s %s %s", HOME, inGeno, inPheno, outFile, geneAction)
+		cmm=sprintf ("%s/main/scripts/script-plink-NaiveModel.sh %s %s %s %s", HOME, inGeno, inPheno, outFile, geneAction)
 		runCommand (cmm, "log-Plink.log")
 
 	}else if (model=="full") {
 		# FIRST: kinship filtering of .ped file
 		#outKinFile = paste0 (inGeno, "-", geneAction, "-kinship-plink")
-		#cmm=sprintf ("%s/sources/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, outKinFile)
+		#cmm=sprintf ("%s/main/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, outKinFile)
 		#runCommand (cmm, "log-kinship.log")
 
 
 		# SECOND: Structure by PCs 
 		#inGeno = outKinFile
-		cmm=sprintf ("%s/sources/scripts/script-plink-FullModel.sh %s '%s' '%s' %s %s", HOME, inGeno, flagTrait, inPheno, outFile, geneAction)
+		cmm=sprintf ("%s/main/scripts/script-plink-FullModel.sh %s '%s' '%s' %s %s", HOME, inGeno, flagTrait, inPheno, outFile, geneAction)
 		runCommand (cmm, "log-Plink.log")
 	}
 

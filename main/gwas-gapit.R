@@ -5,8 +5,8 @@
 main <- function () {
 	HOME="/home/lg/agrosavia/GWAS-TOOL/multiGWAS-dev"
 
-	source (paste0(HOME, "/sources/gwas-lib.R"))
-	source (paste0(HOME, "/sources/gwas-preprocessing.R"))
+	source (paste0(HOME, "/main/gwas-lib.R"))
+	source (paste0(HOME, "/main/gwas-preprocessing.R"))
 	msgmsg <<- message
 
 
@@ -50,9 +50,9 @@ runToolGapit <- function (params) {
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 runGapit <- function (geneAction, genotypeFile, phenotypeFile, scoresFile, params) {
-	#source (paste0 (HOME, "/sources/gapit_functions.R"), echo=F)      # Module with functions to convert between different genotype formats 
+	#source (paste0 (HOME, "/main/gapit_functions.R"), echo=F)      # Module with functions to convert between different genotype formats 
 	library (compiler)
-	source (paste0 (HOME, "/sources/gapit_functions20201028.R"), echo=F)      # Module with functions to convert between different genotype formats 
+	source (paste0 (HOME, "/main/gwas-gapit_functions.R"), echo=F)      # Module with functions to convert between different genotype formats 
 
 	#gapit = gwaspolyToGapitFormat (genotypeFile, phenotypeFile, geneAction, FILES=F)
 	genotype  = read.csv (params$gapitGenotypeFile)
@@ -65,7 +65,7 @@ runGapit <- function (geneAction, genotypeFile, phenotypeFile, scoresFile, param
 		gapitModel = "GLM"
 
 	#out <- GAPIT(Y=phenotype, GM=map, GD=genotype, model="MLM", file.output=F)#, kinship.algorithm="None")
-	out <- GAPIT(Y=phenotype, GM=map, GD=genotype, model="MLM", file.output=F)#, kinship.algorithm="None")
+	out <- GAPIT(Y=phenotype, GM=map, GD=genotype, model=gapitModel, file.output=F)#, kinship.algorithm="None")
 	scoresGapit = out$GWAS
 
 	# Write source scores

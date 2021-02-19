@@ -1,6 +1,19 @@
 ansi-styles	ansi-styles
+ansi_align	ansi_align
+ansi_columns	ansi_columns
+ansi_has_any	ansi_has_any
+ansi_has_hyperlink_support	style_hyperlink
 ansi_hide_cursor	ansi_hide_cursor
+ansi_nchar	ansi_nchar
+ansi_regex	ansi_regex
 ansi_show_cursor	ansi_hide_cursor
+ansi_strip	ansi_strip
+ansi_strsplit	ansi_strsplit
+ansi_strtrim	ansi_strtrim
+ansi_strwrap	ansi_strwrap
+ansi_substr	ansi_substr
+ansi_substring	ansi_substring
+ansi_trimws	ansi_trimws
 ansi_with_hidden_cursor	ansi_hide_cursor
 bg_black	ansi-styles
 bg_blue	ansi-styles
@@ -50,6 +63,7 @@ cli_status_clear	cli_status_clear
 cli_status_update	cli_status_update
 cli_text	cli_text
 cli_ul	cli_ul
+cli_vec	cli_vec
 cli_verbatim	cli_verbatim
 col_black	ansi-styles
 col_blue	ansi-styles
@@ -66,6 +80,7 @@ console_width	console_width
 containers	containers
 default_app	start_app
 demo_spinners	demo_spinners
+faq	faq
 get_spinner	get_spinner
 inline-markup	inline-markup
 is_ansi_tty	is_ansi_tty
@@ -79,8 +94,10 @@ make_spinner	make_spinner
 match_selector	match_selector
 match_selector_node	match_selector_node
 no	pluralization-helpers
+num_ansi_colors	num_ansi_colors
 parse_selector	parse_selector
 pluralization	pluralization
+pluralize	pluralize
 qty	pluralization-helpers
 rule	rule
 simple_theme	simple_theme
@@ -90,6 +107,7 @@ style_blurred	ansi-styles
 style_bold	ansi-styles
 style_dim	ansi-styles
 style_hidden	ansi-styles
+style_hyperlink	style_hyperlink
 style_inverse	ansi-styles
 style_italic	ansi-styles
 style_reset	ansi-styles

@@ -2,6 +2,8 @@ circlize-package	circlize-package
 $.CELL_META	Subset.CELL_META
 add_transparency	add_transparency
 adjacencyList2Matrix	adjacencyList2Matrix
+adjacencyMatrix2List	adjacencyMatrix2List
+arrange_links_evenly	arrange_links_evenly
 calc_gap	calc_gap
 CELL_META	CELL_META
 chordDiagram	chordDiagram
@@ -13,6 +15,7 @@ circos.axis	circos.axis
 circos.barplot	circos.barplot
 circos.boxplot	circos.boxplot
 circos.clear	circos.clear
+circos.connect	circos.connect
 circos.dendrogram	circos.dendrogram
 circos.genomicAxis	circos.genomicAxis
 circos.genomicDensity	circos.genomicDensity
@@ -35,6 +38,7 @@ circos.heatmap.link	circos.heatmap.link
 circos.info	circos.info
 circos.initialize	circos.initialize
 circos.initializeWithIdeogram	circos.initializeWithIdeogram
+circos.labels	circos.labels
 circos.lines	circos.lines
 circos.link	circos.link
 circos.nested	circos.nested
@@ -79,6 +83,7 @@ get.current.chromosome	get.current.chromosome
 get.current.sector.index	get.current.sector.index
 get.current.track.index	get.current.track.index
 getI	getI
+get_most_inside_radius	get_most_inside_radius
 highlight.chromosome	highlight.chromosome
 highlight.sector	highlight.sector
 inches_h	inches_h

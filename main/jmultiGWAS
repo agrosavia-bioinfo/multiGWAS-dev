@@ -1,1 +1,1 @@
-java -jar $MULTIGWAS_HOME/sources/JMultiGWAS.jar &
+java -jar $MULTIGWAS_HOME/main/JMultiGWAS.jar &

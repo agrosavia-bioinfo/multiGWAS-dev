@@ -10,4 +10,4 @@ License: GPL-3
 URL: http://potatobreeding.cals.wisc.edu/software
 NeedsCompilation: no
 Packaged: 2016-08-12 19:34:43 UTC; endelman
-Built: R 3.3.1; ; 2016-08-12 19:47:02 UTC; windows
+Built: R 3.6.3; ; 2021-02-17 04:10:59 UTC; unix

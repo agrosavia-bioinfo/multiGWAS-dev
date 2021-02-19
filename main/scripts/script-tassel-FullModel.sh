@@ -8,7 +8,7 @@ GENOVCF=$1
 PHENOTBL=$2
 OUTFILE=$3
 
-$MULTIGWAS_HOME/tools/run_pipeline.pl \
+$MULTIGWAS_HOME/opt/tools/run_pipeline.pl \
 	-fork1 -vcf $GENOVCF \
 	-fork2 -r $PHENOTBL \
 	-fork3 -vcf $GENOVCF -PrincipalComponentsPlugin -covariance -reportEigenvalues false -reportEigenvectors false -endPlugin \

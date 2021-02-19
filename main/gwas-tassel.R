@@ -14,11 +14,11 @@ runToolTassel <- function (params) {
 	scoresFile    = paste0 (outFile, ".csv")
 
 	if (model=="naive") {
-		cmm=sprintf ("%s/sources/scripts/script-tassel-NaiveModel.sh %s %s %s", HOME,inGenoVCF, inPhenoTBL, outFile)
+		cmm=sprintf ("%s/main/scripts/script-tassel-NaiveModel.sh %s %s %s", HOME,inGenoVCF, inPhenoTBL, outFile)
 		runCommand (cmm, "log-tassel.log")
 		tasselFile   = list.files("out/", pattern=sprintf("^(.*(%s).*(1).*(txt)[^$]*)$",model), full.names=T)
 	}else if (model=="full") {
-		cmm=sprintf ("%s/sources/scripts/script-tassel-FullModel.sh %s %s %s", HOME, inGenoVCF, inPhenoTBL, outFile)
+		cmm=sprintf ("%s/main/scripts/script-tassel-FullModel.sh %s %s %s", HOME, inGenoVCF, inPhenoTBL, outFile)
 		runCommand (cmm, "log-tassel.log")
 		tasselFile   = list.files("out/", pattern=sprintf("^(.*(%s).*(stats).*(txt)[^$]*)$",model), full.names=T)
 	}

@@ -30,12 +30,16 @@ options (bitmapType="cairo", width=300)
 # Outupt are written to output dir
 #-------------------------------------------------------------
 main <- function () {
-	options (warn=1)
-	source (paste0(HOME,"/sources/gwas-lib.R"))            # Module with functions to create summaries: tables and venn diagrams
-	source (paste0(HOME,"/sources/gwas-heatmap.R"))            # Module with functions to create summaries: tables and venn diagrams
-	source (paste0(HOME,"/sources/gwas-preprocessing.R"))      # Module with functions to convert between different genotype formats 
+	message ("-----------------------")
+	message ("Testing gwas-report.R...")
+	message ("-----------------------")
 
-	msgmsg ("Main...")
+
+	options (warn=1)
+	source (paste0(HOME,"/main/gwas-lib.R"))           
+	source (paste0(HOME,"/main/gwas-heatmap.R"))       
+	source (paste0(HOME,"/main/gwas-preprocessing.R")) 
+
 	params = list ()
 	params$inputDir        = "out/"
 	params$genotypeFile    = "out/filtered-gwasp4-genotype.tbl"
@@ -48,7 +52,7 @@ main <- function () {
 	params$ploidy          = 4
 	params$geneAction      = "additive"
 
-	tools1 = list(list (tool="GAPIT", scoresFile="out/tool-GAPIT-scores-naive.csv")) 
+	tools1 = list(list (tool="GWASpoly", scoresFile="out/tool-GWASpoly-scores-naive.csv")) 
 
 	tools2 = list(list (tool="GWASpoly", scoresFile="out/tool-GWASpoly-scores-full.csv"), 
 				  list (tool="SHEsis", scoresFile="out/tool-SHEsis-scores-full.csv"))
@@ -64,11 +68,8 @@ main <- function () {
 
 	listOfResultsFile = tools1
 
+	print (params)
 	createReports (tools1, params)
-	
-
-	#createReports (inputDir, genotypeFile, phenotypeFile, genotypeNumFile,
-	#			   ploidy, gwasModel, outputDir, nBest, geneAction, listOfResultsFile)
 }
 
 #-------------------------------------------------------------
@@ -80,7 +81,7 @@ main <- function () {
 #	5- 1 multiplot of 4x4 manhattan and QQ plots
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-createReports <- function (listOfResultsFile, SNPsLDTable,  params) {
+createReports <- function (listOfResultsFile, params) {
 	inputDir  = params$outputDir
 	outputDir = params$reportDir
 
@@ -92,19 +93,19 @@ createReports <- function (listOfResultsFile, SNPsLDTable,  params) {
 	fileSignificativeScores      = paste0 (outputDir,  "/out-multiGWAS-scoresTable-significatives.scores")
 	fileBestVennDiagram          = paste0 (outputDir, "/out-multiGWAS-vennDiagram-best")
 	fileSignificativeVennDiagram = paste0 (outputDir, "/out-multiGWAS-vennDiagram-significatives")
+	fileSNpsHighLD                = paste0 (outputDir, "/out-multiGWAS-SNPsHighLD-table.csv")
 
 	msgmsg ("Writing input config parameters...")
 	config = writeConfigurationParameters (inputDir, outputDir)
 
 	if (length (listOfResultsFile)==0) {
-		msgError ("WARNING: No result files for any tool. Check config file parameters (e.g. tools, geneAction, gwasModel)")
+		msgError ("WARNING: No result files for any tool.\n
+				  Check config file parameters (e.g. tools, geneAction, gwasModel)")
 		quit ()
 	}
 
-	# Create file with SNPs in high Linkage disequilibrium
-	createSNPsLDTable (SNPsLDTable, outputDir)
-
-	snpTables = markersSummaryTable (listOfResultsFile, params$gwasModel, params$nBest, params$geneAction, params$genotypeNumFile)
+	snpTables = markersSummaryTable (listOfResultsFile, params$gwasModel, params$nBest, 
+									 params$geneAction, params$genotypeNumFile)
 
 	msgmsg ("Writing tables with best ranked and signficative SNPs... ")
 	write.table (file=fileBestScores, snpTables$best, row.names=F,quote=F, sep="\t")
@@ -112,31 +113,40 @@ createReports <- function (listOfResultsFile, SNPsLDTable,  params) {
 
 	msgmsg ("Writing Venn diagram for best and significative SNPs...")
 	commonBest = markersVennDiagrams (listOfResultsFile, snpTables$best, params$gwasModel, "Best", fileBestVennDiagram)
-	commonSign = markersVennDiagrams (listOfResultsFile, snpTables$significatives, params$gwasModel, "Significatives", fileSignificativeVennDiagram)
+	commonSign = markersVennDiagrams (listOfResultsFile, snpTables$significatives, params$gwasModel, "Significatives",
+									  fileSignificativeVennDiagram)
 
 	msgmsg ("Writing Manhattan and QQ plots...")
 	createManhattanPlots (listOfResultsFile, commonBest, snpTables, params$nBest, params$geneAction, outputDir)
 
 	# Create heat maps
 	msgmsg ("Creating heatmaps for best ranked SNPs...")
-	createHeatmapForSNPList (outputDir, params$genotypeFile, params$genotypeNumFile, params$phenotypeFile, commonBest, params$ploidy)
+	createHeatmapForSNPList (outputDir, params$genotypeFile, params$genotypeNumFile, params$phenotypeFile, 
+							 commonBest, params$ploidy)
 
 	# Create chord diagrams
 	msgmsg ("Creating chord diagrams for chromosome vs SNPs...")
 	createChordDiagramSharedSNPs (fileBestScores)
+
+	# Create table for SNPs in high LD
+	createSNPsHighLDOutputs (params$SNPsHighLDFile, outputDir)
 
 	# Call to rmarkdown report
 	createMarkdownReport (config)
 }
 
 #-------------------------------------------------------------
-	# Create file with SNPs in high Linkage disequilibrium
+# By now, only copy table to report dir to show as knit table
 #-------------------------------------------------------------
-createSNPsLDTable <- function (SNPsLDTable, outputDir) {
-	SNPsLDTableFilename = paste0 (outputDir, "/out-multiGWAS-SNPsLDTable.csv")
-	write.csv (SNPsLDTable, SNPsLDTableFilename, row.names=F, quote=F)
-}
+createSNPsHighLDOutputs <- function (SNPsHighLDFile, outputDir) {
+	if (is.null (SNPsHighLDFile))
+		return()
 
+	msgmsg ("Copying table of SNPs in high LD...")
+	msgmsg (SNPsHighLDFile)
+	msgmsg (outputDir)
+	file.copy (SNPsHighLDFile, outputDir)
+}
 #-------------------------------------------------------------
 # Create manhattan plots for each tool
 #-------------------------------------------------------------
@@ -165,15 +175,10 @@ createMarkdownReport  <- function (params) {
 
 
 	# Create html with embbeded images (using javascrips) for Java WebView
-	rmarkdown::render (paste0(HOME,"/sources/gwas-markdown.Rmd"), output_file=outputFile, output_format="html_document", 
-					   params=list (workingDir=params$workingDir, reportTitle=title, nBest=params$nBest, R2=params$Rw), quiet=T)
-
-	# Create html with external images (using subfolders) for Java JEditorPane
-	#rmarkdown::render (paste0(HOME,"/sources/gwas-markdown.Rmd"), output_file=outputFile, 
-	#				   output_format="html_document", output_options=list(self_contained=F),
-	#				   params=list (workingDir=params$workingDir, reportTitle=title, nBest=params$nBest), quiet=T)
+	rmarkdown::render (paste0(HOME,"/main/gwas-markdown.Rmd"), output_file=outputFile, output_format="html_document", 
+					   params=list (workingDir=params$workingDir, reportTitle=title, nBest=params$nBest, R2=params$R2), 
+					   envir = new.env(), quiet=T)
 }
-
 
 #------------------------------------------------------------------------
 #------------------------------------------------------------------------
@@ -604,5 +609,5 @@ createDir <- function (newDir) {
 #-------------------------------------------------------------
 
 #source ("lglib06.R")
-main ()
+#main ()
 

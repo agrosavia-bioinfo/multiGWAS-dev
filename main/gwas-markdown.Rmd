@@ -1,8 +1,9 @@
 ---
 params:
-  workingDir    : "in/"
-  reportTitle   : "MultiGWAS report"
-  nBest         : 6
+  workingDir  : "in/"
+  reportTitle : "MultiGWAS report"
+  nBest       : 6
+  R2          : 1
 
 output: 
   html_document: 
@@ -51,13 +52,21 @@ kable (paramsDF) %>%
  	kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=5))
 ```
 
-# SNPs in Linkage Disequilibrium
-The following table shows the SNPs in Linkage Disequilibrium above $R^2$ = `r R2`
+# SNPs in Linkage Disequilibrium above $R^2$ = `r R2`
+```{r SNPsHighLDTable,  echo=FALSE, message=FALSE}
+SNPsHighLDFile = paste0(inputDir, "/out-SNPsHighLD-Table.csv")
+if (file.exists (SNPsHighLDFile)) {
+	cat ("The following table shows the SNPs in Linkage Disequilibrium") 
+	LD_FLAG = T
+}else { 
+	cat ("There were no SNPs in Linkage Disequilibrium")
+	LD_FLAG = F
+}
 
-```{r SNPsLDTable,  echo=FALSE, message=FALSE}
-SNPsLDTable = read.csv (file=paste0(inputDir, "/out-multiGWAS-SNPsLDTable.csv"))
-kable (SNPsLDTable) %>%
- 	kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=5))
+```{r SNPsTable, eval=LD_FLAG}
+	SNPsHighLDTable = read.csv (SNPsHighLDFile)
+	kable (SNPsHighLDTable) %>%
+ 		kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=5))
 ```
 
 # Best-ranked SNPs

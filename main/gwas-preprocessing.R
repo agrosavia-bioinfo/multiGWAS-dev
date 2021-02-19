@@ -4,22 +4,18 @@
 # AUTHOR: Luis Garreta (lgarreta@agrosavia.co)
 # DATE  : 12/Feb/2020
 # LOG   : 
-	# r1.31: Added GWASpoly To GAPIT numeric
-	# r1.3: Added from AABB to Num, from ACGT to Genodive|:wq
-	# r1.2: Modified get.alt
-	# r1.1: VCF to ACGT functions
-	# r1.0: Working tetra and diplo
-	# r1.0: Used by MultiGWAS tool
-	# r1.1: Modified some function names
+#         r1.31: Added GWASpoly To GAPIT numeric
 
 #options (width=300, stringsAsFactors=F)
 #args = commandArgs(trailingOnly=T)
+
+HOME = Sys.getenv ("MULTIGWAS_HOME")
+.libPaths (paste0(HOME, "/opt/Rlibs"))
+
 suppressMessages (library (parallel))
 suppressMessages (library (dplyr))
 suppressMessages (library (stringi))
 formatsLogFile="log-formats.log"
-
-HOME = Sys.getenv ("MULTIGWAS_HOME")
 #----------------------------------------------------------
 # Main
 #----------------------------------------------------------
@@ -30,6 +26,10 @@ main <- function ()
 	options (width=300)
 	args = commandArgs (trailingOnly=T)
 
+	genotypeFile = args [1]
+	convertVCFToGenodiveFormat (genotypeFile)
+
+	#convertVCFToACGTByNGSEP (genotypeFile) 
 	#numericTetraToNumericDiploGSMatrix (genotypeFile)
 	#convertAABBGWASpolyToNumericFormat (inputFilename)
 	#gwaspTetraToDiploGenotype (genotypeFile)
@@ -47,10 +47,8 @@ main <- function ()
 	#genotypeFile = args [1]
 	#geno = filterByMissingMarkersAndSamples (genotypeFile, 0.3, 0.2)
 
-	genotypeFile = args [1]
-	#convertACGTGWASpolyToGenodiveACGTGenotypeFormat  (genotypeFile) 
-	convertVCFToACGTByNGSEP (genotypeFile) 
 }
+
 
 #-------------------------------------------------------------
 # Get common sample names
@@ -399,8 +397,9 @@ convertGwaspolyToFitpolyScores <- function (gwpFile)
 convertVCFToACGTByNGSEP <- function (filename, outFilename="") 
 {
 	stemName = strsplit (filename, "[.]")[[1]][1]
-	cmm=sprintf ("java -jar %s/tools/MultiGWAS_NGSEP.jar VCFConverter -GWASPoly -i %s -o %s", HOME, filename, stemName)
-	runCommand (cmm, "log-tassel.log")
+	cmm=sprintf ("java -jar %s/opt/tools/MultiGWAS_NGSEP.jar VCFConverter -GWASPoly -i %s -o %s", HOME, filename, stemName)
+	print (cmm)
+	runCommand (cmm, "log-NGSEP.log")
 	outFilename = paste0 (stemName, "_GWASPoly.csv") # Added by NGSEP tool
 	return (outFilename)
 }
@@ -924,19 +923,22 @@ convertAABBGWASpolyToNumericFormat <- function (genotypeFile)
 	write.csv (newGeno, newName, quote=F, row.names=F)
 }
 
+#-------------------------------------------------------------
+# Convert genotype in VCF format to kmatrix numeric format (A:1, C:2, G:3, T:4)
 #----------------------------------------------------------
-# Convert gwaspoly ACGT to Genodive numeric format (A:1, C:2, G:3, T:4)
-#----------------------------------------------------------
-convertACGTGWASpolyToGenodiveACGTGenotypeFormat <- function (genotypeFile) 
-{
+convertVCFToGenodiveFormat <- function (genotypeFile) {
+	message ("Converting to kmatrix....")
+	kmatrixFile = convertVCFToACGTByNGSEP (genotypeFile)
+	message ("Converting to Genodive")
+
 	NCORES = detectCores()
-	geno   = read.csv (file=genotypeFile, header=T, check.names=F)
+	geno   = read.csv (file=kmatrixFile, header=T, check.names=F)
 
 	markers           = as.matrix(geno[,-(1:3)])
 	sampleNames       = colnames (geno[,-(1:3)])
 	rownames(markers) = geno[,1]
 
-#>>>> Convert one row from ACGT to Num. x=RefAllele|...Alleles...
+	#>>>> Convert one row from ACGT to Num. x=RefAllele|...Alleles...
 	acgtToNum <- function(ACGTList){
 		changeGenotype <- function (ACGT) {
 			newGeno = gsub ("A","1",gsub ("C","2",gsub("G","3",gsub("T","4",ACGT))))
@@ -951,7 +953,7 @@ convertACGTGWASpolyToGenodiveACGTGenotypeFormat <- function (genotypeFile)
 	M = as.data.frame (numList,col.names=colnames (markers), check.names=F)
 
 	newGeno = data.frame (Markers=geno[,1], M, check.names=F) # Check=FALSE names but not row names
-	newName = paste0 (strsplit (genotypeFile, split="[.]")[[1]][1], "-GENODIVE.csv")
+	newName = paste0 (strsplit (kmatrixFile, split="[.]")[[1]][1], "-GENODIVE.csv")
 	write.csv (file=newName, newGeno, quote=F, row.names=F)
 
 	return (newName)

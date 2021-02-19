@@ -2,9 +2,11 @@ $.CELL_META             Easy to way to get meta data in the current
                         cell
 CELL_META               Easy way to get meta data in the current cell
 add_transparency        Add transparency to colors
-adjacencyList2Matrix    Convert adjacency list to adjacency matrix
-calc_gap                Calculate gap to make two Chord diagram with
-                        same scale
+adjacencyList2Matrix    Convert adjacency list to an adjacency matrix
+adjacencyMatrix2List    Convert adjacency matrix to an adjacency list
+arrange_links_evenly    Arrange links evenly on each sector
+calc_gap                Calculate gaps to make two Chord diagrams in
+                        the same scale
 chordDiagram            Plot Chord Diagram
 chordDiagramFromDataFrame
                         Plot Chord Diagram from a data frame
@@ -17,6 +19,8 @@ circos.axis             Draw x-axis
 circos.barplot          Draw barplots
 circos.boxplot          Draw boxplots
 circos.clear            Reset the circular layout parameters
+circos.connect          Draw connecting lines/ribons between two sets
+                        of points
 circos.dendrogram       Add circular dendrograms
 circos.genomicAxis      Add genomic axes
 circos.genomicDensity   Calculate and add genomic density track
@@ -52,6 +56,7 @@ circos.info             Get information of the circular plot
 circos.initialize       Initialize the circular layout
 circos.initializeWithIdeogram
                         Initialize the circular layout with an ideogram
+circos.labels           Add a label track
 circos.lines            Add lines to the plotting region
 circos.link             Draw links between points or/and intervals
 circos.nested           Nested zooming with two circular plots
@@ -104,6 +109,8 @@ get.current.sector.index
 get.current.track.index
                         Get current track index
 getI                    Which data that 'panel.fun' is using
+get_most_inside_radius
+                        Get the inside radius of the most inner track
 highlight.chromosome    Highlight chromosomes
 highlight.sector        Highlight sectors and tracks
 inch_h                  Convert units

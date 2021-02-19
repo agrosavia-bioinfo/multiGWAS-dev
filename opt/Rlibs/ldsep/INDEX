@@ -3,12 +3,17 @@ format_lddf             Format an element of 'mldest()' or 'sldest()'
                         into an upper-triangular matrix.
 get_prob_array          Obtain the distribution of genotypes given
                         haplotype frequencies under HWE
+gl_to_gp                Normalize genotype likelihoods to posterior
+                        probabilities.
+glike                   Genotype log-likelihoods from 'uit'
+gp                      Posterior probabilities from 'uit'
 is.lddf                 Tests if an argument is a 'lddf' object.
 ldest                   Pairwise LD estimation in polyploids.
 ldest_comp              Estimates of composite pairwise LD based either
                         on genotype estimates or genotype likelihoods.
 ldest_hap               Estimate haplotypic pair-wise LD using either
                         genotypes or genotype likelihoods.
+ldfast                  Fast bias-correction for LD Estimation
 ldsep-package           Linkage Disequilibrium Shrinkage Estimation for
                         Polyploids
 ldshrink                Obtain shrinkage estimates of correlation from
@@ -19,6 +24,8 @@ pbnorm_dist             Returns distribution of proportional bivariate
                         normal.
 plot.lddf               Plot the output of 'mldest()' or 'sldest()'
                         using 'corrplot()'
+pvcalc                  Calculate prior variances from a matrix of
+                        prior genotype probabilities.
 sldest                  Sliding window LD estimation
 uit                     Updog fits on the data from Uitdewilligen et.
                         al. (2013)

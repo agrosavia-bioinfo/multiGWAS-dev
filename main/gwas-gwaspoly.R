@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-# INFO   : Script to run GWASpoly for tetraploides (modified from GWASpoly sources)
+# INFO   : Script to run GWASpoly for tetraploides (modified from GWASpoly main)
 # AUTHOR : Luis Garreta (lgarreta@agrosavia.co)
 # DATA   : Feb/2020
 # LOG    :

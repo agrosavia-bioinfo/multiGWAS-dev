@@ -1,4 +1,5 @@
 PrinCoor                Function for Principal Coordinate Analysis
+bplot                   General function for making biplots
 calibrate               Calibration of Biplot and Scatterplot Axis
 calves                  Delivery of Dutch Calves
 canocor                 Canonical correlation analysis

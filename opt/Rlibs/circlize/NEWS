@@ -1,3 +1,35 @@
+Changes in version 0.4.12
+-----------------------------------------------------------------------
+* `smartAlign()`: improved boxes overlapping
+* `circos.heatmap()`: automatically convert the input to a matrix if 
+  it is a data frame
+* now validate the regions to check whether the regions are exceeding 
+  the chromosomes.
+* `circos.link()`: add a new `inverse` argument to control whether the link
+  is inversed or not.
+* `circos.genomicLabels()`: replace `side` argument with `labels.side`.
+* `circos.points()`, `circos.lines()`, `circos.text()` allow argument `x` to be
+  a two-column matrix.
+* add `arrange_links_evenly()` function.
+* add `circos.connect()` function.
+* `circos.heatmap()`: argument `cluster` can be a clustering object.
+* `circos.heatmap()`: add `cell_width` to control the relative width of heatmap cells.
+* add `circos.labels()`.
+* `chordDiagram()`: bars are drawn according to the visibility of links.
+
+Changes in version 0.4.11
+-----------------------------------------------------------------------
+* `chordDiagram()`: add `link.auto` argument
+* `chordDiagram()`: add `link.target.prop` and `target.prop.height` arguments
+* `circos.par()`: add `circle.margin` option
+* `circos.genomicLabels()`: fixed a bug when `direction = "outside"`
+* add `xaxis.clock.wise` option in `circos.par()`
+* `chordDiagram()`: now the scaling is properly applied.
+* `chordDiagram()`: link positions are optimized so they have minimal intersections.
+   `link.auto` argument is ignored and removed.
+* `circos.dendrogram()`: support arbitary numbers of branches on each node.
+* all functions with `factors` with arguments change to `sectors`.
+
 Changes in version 0.4.10
 -----------------------------------------------------------------------
 * `highlight.sector()`: fixed a bug when circos.par("clock.wise" = FALSE)

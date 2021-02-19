@@ -21,7 +21,7 @@ runToolShesis <- function (params)
 		inGeno   = params$plinkGenotypeFile
 
 		kinFile = paste0 (inGeno,"-kinship-shesis")
-		cmm     = sprintf ("%s/sources/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, kinFile)
+		cmm     = sprintf ("%s/main/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, kinFile)
 		runCommand (cmm, "log-kinship.log")
 
 		# Filter geno/pheno to individuals, write out, and convert to SHEsis format
@@ -55,7 +55,7 @@ runShesisCommand <- function (traitType, genoPhenoFile, markersFile, geneAction,
 	outFile      = paste0 (scoresFile, "-SOURCES")
 	flagQTL      = ifelse (traitType=="quantitative", "--qtl", "")
 
-	cmm=sprintf ("%s/sources/scripts/script-shesis-associations-qtl.sh %s %s %s %s %s", HOME, genoPhenoFile, params$ploidy, markersFile, outFile, flagQTL)
+	cmm=sprintf ("%s/main/scripts/script-shesis-associations-qtl.sh %s %s %s %s %s", HOME, genoPhenoFile, params$ploidy, markersFile, outFile, flagQTL)
 	runCommand (cmm, "log-SHEsis.log")	
 
 	if (traitType=="quantitative")

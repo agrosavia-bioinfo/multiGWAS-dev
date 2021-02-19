@@ -1,3 +1,207 @@
+# rlang 0.4.10
+
+* New `hash()` function to generate 128-bit hashes for arbitrary R objects
+  using the xxHash library. The implementation is modeled after
+  [xxhashlite](https://github.com/coolbutuseless/xxhashlite), created
+  by @coolbutuseless.
+
+* New `check_installed()` function. Unlike `is_installed()`, it asks
+  the user whether to install missing packages. If the user accepts,
+  the packages are installed with `pak::pkg_install()` if available,
+  or `utils::install.packages()` otherwise. If the session is non
+  interactive or if the user chooses not to install the packages, the
+  current evaluation is aborted (#1075).
+
+* rlang is now licensed as MIT (#1063).
+
+* Fixed an issue causing extra empty lines in `inform()` messages with
+  `.frequency` (#1076, @schloerke).
+
+* `expr_deparse()` now correctly wraps code using `::` and `:::`
+  (#1072, @krlmlr).
+
+
+# rlang 0.4.9
+
+## Breaking changes
+
+* Dropped support for the R 3.2 series.
+
+
+## New features
+
+* `inject()` evaluates its argument with `!!`, `!!!`, and `{{`
+  support.
+
+* New `enquo0()` and `enquos0()` operators for defusing function
+  arguments without automatic injection (unquotation).
+
+* `format_error_bullets()` is no longer experimental. The `message`
+  arguments of `abort()`, `warn()`, and `inform()` are automatically
+  passed to that function to make it easy to create messages with
+  regular, info, and error bullets. See `?format_error_bullets` for
+  more information.
+
+* New `zap_srcref()` function to recursively remove source references
+  from functions and calls.
+
+* A new compat file for the zeallot operator `%<-%` is now available
+  in the rlang repository.
+
+* New `%<~%` operator to define a variable lazily.
+
+* New `env_browse()` and `env_is_browsed()` functions. `env_browse()`
+  is equivalent to evaluating `browser()` within an environment. It
+  sets the environment to be persistently browsable (or unsets it if
+  `value = FALSE` is supplied).
+
+* Functions created from quosures with `as_function()` now print in a
+  more user friendly way.
+
+* New `rlang_print_backtrace` C callable for debugging from C
+  interpreters (#1059).
+
+
+## Bugfixes and improvements
+
+* The `.data` pronoun no longer skips functions (#1061). This solves a
+  dplyr issue involving rowwise data frames and list-columns of
+  functions (tidyverse/dplyr#5608).
+
+* `as_data_mask()` now intialises environments of the correct size to
+  improve efficiency (#1048).
+
+* `eval_bare()`, `eval_tidy()` (#961), and `with_handlers()` (#518)
+  now propagate visibility.
+
+* `cnd_signal()` now ignores `NULL` inputs.
+
+* Fixed bug that prevented splicing a named empty vector with the
+  `!!!` operator (#1045).
+
+* The exit status of is now preserved in non-interactive sessions when
+  `entrace()` is used as an `options(error = )` handler (#1052,
+  rstudio/bookdown#920).
+
+* `next` and `break` are now properly deparsed as nullary operators.
+
+
+# rlang 0.4.8
+
+* Backtraces now include native stacks (e.g. from C code) when the
+  [winch](https://r-prof.github.io/winch/) package is installed and
+  `rlang_trace_use_winch` is set to `TRUE` (@krlmlr).
+
+* Compatibility with upcoming testthat 3 and magrittr 2 releases.
+
+* `get_env()` now returns the proper environment with primitive
+  functions, i.e. the base namespace rather than the base environment
+  (r-lib/downlit#32).
+
+* `entrace()` no longer handles non-rlang errors that carry a
+  backtrace. This improves compatibility with packages like callr.
+
+* Backtraces of unhandled errors are now displayed without truncation
+  in non-interactive sessions (#856).
+
+* `is_interactive()` no longer consults "rstudio.notebook.executing"
+  option (#1031).
+
+
+# rlang 0.4.7
+
+* `cnd_muffle()` now returns `FALSE` instead of failing if the
+  condition is not mufflable (#1022).
+
+* `warn()` and `inform()` gain a `.frequency` argument to control how
+  frequently the warning or message should be displayed.
+
+* New `raw_deparse_str()` function for converting a raw vector into a
+  string of hexadecimal characters (@krlmlr, #978).
+
+* The backtraces of chained errors are no longer decomposed by error
+  context. Instead, the error messages are displayed as a tree to
+  reflect the error ancestry, and the deepest backtrace in the ancestry
+  is displayed.
+
+  This change simplifies the display (#851) and makes it possible to
+  rethow errors from a calling handler rather than an exiting handler,
+  which we now think is more appropriate because it allows users to
+  `recover()` into the error.
+
+* `env_bind()`, `env_bind_active()`, `env_bind_lazy()`, `env_get()`,
+  and `env_get_list()` have been rewritten in C.
+
+* `env_poke()` now supports `zap()` sentinels for removing bindings
+  (#1012) and has better support for characters that are not
+  representable in the local encoding.
+
+* `env_poke()` has been rewritten in C for performance.
+
+* The unicode translation warnings that appeared on Windows with R 4.0
+  are now fixed.
+
+* `env_unbind(inherit = TRUE)` now only removes a binding from the
+  first parent environment that has a binding. It used to remove the
+  bindings from the whole ancestry. The new behaviour doesn't
+  guarantee that a scope doesn't have a binding but it is safer.
+
+* `env_has()` is now rewritten in C for performance.
+
+* `dots_list()` gains a `.named` argument for auto-naming dots (#957).
+
+* It is now possible to subset the `.data` pronoun with quosured
+  symbols or strings (#807).
+
+* Expressions like `quote(list("a b" = 1))` are now properly deparsed
+  by `expr_deparse()` (#950).
+
+* `parse_exprs()` now preserves names (#808). When a single string
+  produces multiple expressions, the names may be useful to figure out
+  what input produced which expression.
+
+* `parse_exprs()` now supports empty expressions (#954).
+
+* `list2(!!!x)` no longer evaluates `x` multiple times (#981).
+
+* `is_installed()` now properly handles a `pkg` argument of length > 1.
+  Before this it silently tested the first element of `pkg` only
+  and thus always returned `TRUE` if the first package was installed
+  regardless of the actual length of `pkg`. (#991, @salim-b)
+
+* `arg_match0()` is a faster version of `arg_match()` for use when performance
+  is at a premium (#997, @krlmlr).
+
+
+# rlang 0.4.6
+
+* `!!!` now uses a combination of `length()`, `names()`, and `[[` to splice
+  S3 and S4 objects. This produces more consistent behaviour than `as.list()`
+  on a wider variety of vector classes (#945, tidyverse/dplyr#4931).
+
+
+# rlang 0.4.5
+
+* `set_names()`, `is_formula()`, and `names2()` are now implemented in
+  C for efficiency.
+
+* The `.data` pronoun now accepts symbol subscripts (#836).
+
+* Quosure lists now explicitly inherit from `"list"`. This makes them
+  compatible with the vctrs package (#928).
+
+* All rlang options are now documented in a centralised place, see
+  `?rlang::faq-options` (#899, @smingerson).
+
+* Fixed crash when `env_bindings_are_lazy()` gets improper arguments (#923).
+
+* `arg_match()` now detects and suggests possible typos in provided
+  arguments (@jonkeane, #798).
+
+* `arg_match()` now gives an error if argument is of length greater
+  than 1 and doesn't exactly match the values input, similar to base
+  `match.arg` (#914, @AliciaSchep)
+
 
 # rlang 0.4.4
 
