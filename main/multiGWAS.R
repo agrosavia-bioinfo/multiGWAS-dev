@@ -87,6 +87,7 @@ initGlobalEnvironment <- function ()
 	source (paste0 (HOME, "/main/gwas-tassel.R"))             # Module with tassel functions
 	source (paste0 (HOME, "/main/gwas-shesis.R"))             # Module with shesis functions
 	source (paste0 (HOME, "/main/gwas-gapit.R"))             # Module with shesis functions
+	#source (paste0 (HOME, "/main/gwas-parameters.R"))             # Module with shesis functions
 }
 
 #-------------------------------------------------------------
@@ -188,6 +189,7 @@ readCheckConfigParameters <- function (paramsFile) {
 	# Set default values if not set
 	if (is.null (params$geneAction)) params$geneAction = "additive"
 	if (is.null (params$traitType)) params$traitType = "quantitative"
+	if (is.null (params$R2)) params$R2 = 1
 
 	# Change to lower case text parameters
 	params$genotypeFormat   = tolower (params$genotypeFormat) 
@@ -381,7 +383,6 @@ createTableSNPsHighLDAllTools <- function (listOfResultsFile, nBest, genotypeNum
 
 	ldMatrixAll = mldest(genomatSNPs, K = 4, nc = 1, type = "comp", se=F);
 	ldMatrix    = ldMatrixAll [,c(3,4,7)]
-	view (ldMatrix)
 
 	# Create a table with LD SNPs
 	i=1
@@ -422,7 +423,6 @@ getSNPsHighLDTool <- function (genoNumFile, scores, maxLD, maxBest, tool) {
 
 	# Get genotypes for SNPs and calculate LD matrix (r2)
 	genomatSNPs = genomat [snpList,]; 
-	print (NCORES)
 	ldMatrixAll = mldest(genomatSNPs, K = 4, nc = 1, type = "comp", se=F);
 	ldMatrix    = ldMatrixAll [,c(3,4,7)]
 
@@ -579,15 +579,19 @@ genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile,
 		msgmsg ("Without filters")
 	}else {
 		msgmsg ("Using filters...")
+		message (">>>>>>>>>>")
+		oldg =  genotypeFile
 		msgmsg ("Filtering by missing markers and samples...")
 		genotypeFile  = filterByMissingMarkersAndSamples (genotypeFile, params$GENO, params$MIND) 
+		genotypeFile = oldg
 	}
 
 	# Filter by common markers, samples and remove duplicated and NA phenos
-	msgmsg ("Selecting common markers and samples names...")
+	msgmsg ("Filtering by common markers and samples...")
 	common          = filterByCommonMarkersSamples (genotypeFile, phenotypeFile, genotypeNumFile)
 	genotypeFile    = common$genotypeFile
-	genotypeNumFile = ACGTToNumericGenotypeFormat (genotypeFile, params$ploidy)
+	genotypeNumFile = common$genotypeNumFile
+	#genotypeNumFile = ACGTToNumericGenotypeFormat (genotypeFile, params$ploidy)
 	phenotypeFile   = common$phenotypeFile
 	trait           = common$trait
 

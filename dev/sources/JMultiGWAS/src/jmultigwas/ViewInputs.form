@@ -94,9 +94,9 @@
                           <EmptySpace min="-2" pref="35" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="fieldOutputDir" alignment="0" max="32767" attributes="0"/>
-                              <Component id="genotypeText" alignment="0" pref="297" max="32767" attributes="0"/>
-                              <Component id="mapText" alignment="0" pref="297" max="32767" attributes="0"/>
-                              <Component id="fieldPheno" alignment="0" pref="297" max="32767" attributes="0"/>
+                              <Component id="genotypeText" alignment="0" pref="301" max="32767" attributes="0"/>
+                              <Component id="mapText" alignment="0" pref="301" max="32767" attributes="0"/>
+                              <Component id="fieldPheno" alignment="0" pref="301" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
@@ -160,7 +160,7 @@
               <SubComponents>
                 <Component class="javax.swing.JLabel" name="labelOutputDir">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Output Folder:"/>
+                    <Property name="text" type="java.lang.String" value="Working dir:"/>
                   </Properties>
                 </Component>
                 <Component class="javax.swing.JTextField" name="fieldOutputDir">
@@ -282,7 +282,7 @@
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
-              <BorderConstraints direction="West"/>
+              <BorderConstraints direction="Center"/>
             </Constraint>
           </Constraints>
 
@@ -338,25 +338,34 @@
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
-                              <EmptySpace min="-2" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="labelPloidy" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel8" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  <Group type="102" attributes="0">
+                                      <Group type="103" groupAlignment="0" attributes="0">
+                                          <Component id="labelPloidy" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="jLabel8" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
+                                          <Component id="jLabel6" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      </Group>
+                                      <EmptySpace min="-2" pref="5" max="-2" attributes="0"/>
+                                      <Group type="103" groupAlignment="2" attributes="0">
+                                          <Component id="fieldPloidy" alignment="2" max="32767" attributes="0"/>
+                                          <Component id="fieldModel" alignment="2" max="32767" attributes="0"/>
+                                          <Component id="fieldSignificance" alignment="2" max="32767" attributes="0"/>
+                                          <Component id="fieldCorrection" alignment="2" pref="105" max="32767" attributes="0"/>
+                                          <Component id="fieldSNPs" alignment="2" max="32767" attributes="0"/>
+                                          <Component id="fieldFiltering" alignment="2" max="32767" attributes="0"/>
+                                      </Group>
+                                  </Group>
+                                  <Group type="102" attributes="0">
+                                      <Component id="labelR2" min="-2" pref="130" max="-2" attributes="0"/>
+                                      <EmptySpace max="32767" attributes="0"/>
+                                      <Component id="fieldR2" min="-2" pref="106" max="-2" attributes="0"/>
+                                  </Group>
                               </Group>
-                              <EmptySpace min="-2" pref="5" max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="2" attributes="0">
-                                  <Component id="fieldPloidy" alignment="2" max="32767" attributes="0"/>
-                                  <Component id="fieldModel" alignment="2" max="32767" attributes="0"/>
-                                  <Component id="fieldSignificance" alignment="2" max="32767" attributes="0"/>
-                                  <Component id="fieldCorrection" alignment="2" pref="105" max="32767" attributes="0"/>
-                                  <Component id="fieldSNPs" alignment="2" max="32767" attributes="0"/>
-                                  <Component id="fieldFiltering" alignment="2" max="32767" attributes="0"/>
-                              </Group>
-                              <EmptySpace min="-2" pref="72" max="-2" attributes="0"/>
+                              <EmptySpace min="72" pref="72" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -365,35 +374,40 @@
                           <Group type="102" alignment="1" attributes="0">
                               <EmptySpace min="-2" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
-                                  <Component id="fieldPloidy" alignment="3" max="32767" attributes="0"/>
+                                  <Component id="fieldPloidy" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="labelPloidy" alignment="3" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel8" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="fieldModel" alignment="3" max="32767" attributes="0"/>
+                                  <Component id="fieldModel" alignment="3" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace min="-2" pref="8" max="-2" attributes="0"/>
+                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel3" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="fieldSignificance" alignment="3" max="32767" attributes="0"/>
+                                  <Component id="fieldSignificance" alignment="3" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace type="separate" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="14" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel4" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="fieldCorrection" alignment="3" max="32767" attributes="0"/>
+                                  <Component id="fieldCorrection" alignment="3" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="11" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="fieldSNPs" max="32767" attributes="0"/>
+                                  <Component id="fieldSNPs" min="-2" max="-2" attributes="0"/>
                                   <Component id="jLabel5" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="jLabel6" min="-2" max="-2" attributes="0"/>
-                                  <Component id="fieldFiltering" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="fieldFiltering" alignment="0" min="-2" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace min="-2" pref="34" max="-2" attributes="0"/>
+                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="3" attributes="0">
+                                  <Component id="labelR2" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  <Component id="fieldR2" alignment="3" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                              <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -401,7 +415,7 @@
                   <SubComponents>
                     <Component class="javax.swing.JLabel" name="jLabel8">
                       <Properties>
-                        <Property name="text" type="java.lang.String" value="GWAS Model:"/>
+                        <Property name="text" type="java.lang.String" value="Analysis mode:"/>
                       </Properties>
                     </Component>
                     <Component class="javax.swing.JComboBox" name="fieldModel">
@@ -513,6 +527,16 @@
                       <AuxValues>
                         <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
                       </AuxValues>
+                    </Component>
+                    <Component class="javax.swing.JLabel" name="labelR2">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="LD threshold (R2):"/>
+                      </Properties>
+                    </Component>
+                    <Component class="javax.swing.JTextField" name="fieldR2">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="1.0"/>
+                      </Properties>
                     </Component>
                   </SubComponents>
                 </Container>

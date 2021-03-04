@@ -1,23 +1,29 @@
-# MultiGWAS Table of Contents
-   * [MultiGWAS Table of Contents](#multigwas-table-of-contents)
+Table of Contents
+=================
+
    * [Installation](#installation)
       * [General steps to install multiGWAS on a Linux system](#general-steps-to-install-multigwas-on-a-linux-system)
       * [Specific instructions to install multiGWAS on a Linux Ubuntu](#specific-instructions-to-install-multigwas-on-a-linux-ubuntu)
-         * [Install external software:](#install-external-software)
-         * [Install MultiGWAS tool:](#install-multigwas-tool)
+         * [Install external software](#install-external-software)
+         * [Install MultiGWAS tool](#install-multigwas-tool)
    * [Executing the MultiGWAS tool](#executing-the-multigwas-tool)
-      * [Using the command line interface:](#using-the-command-line-interface)
+      * [Using the command line interface](#using-the-command-line-interface)
       * [Using the graphical user interface:](#using-the-graphical-user-interface)
    * [Running the examples](#running-the-examples)
    * [General usage](#general-usage)
-   * [Genomic data formats](#genomic-data-formats)
-      * [Genotype:](#genotype)
-      * [Phenotype](#phenotype)
    * [Configuration file](#configuration-file)
+      * [Example of a configuration file](#example-of-a-configuration-file)
+      * [Genomic data inputs](#genomic-data-inputs)
+         * ["genotypeFile"](#genotypefile)
+         * ["genotypeFormat"](#genotypeformat)
+         * ["phenotypeFile"](#phenotypefile)
+         * ["mapFile"](#mapfile)
    * [Considerations](#considerations)
       * [Implementation](#implementation)
       * [Number of SNPs in Manhattan and QQ plots](#number-of-snps-in-manhattan-and-qq-plots)
       * [Correction for multiple testing](#correction-for-multiple-testing)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # Installation
 We describe here the [MultiGWAS](https://github.com/agrosavia-bionformatics/multiGWAS) installation that contains the file sources and binaries to run the MultiGWAS tool. It includes:

@@ -27,9 +27,9 @@ main <- function ()
 	args = commandArgs (trailingOnly=T)
 
 	genotypeFile = args [1]
-	convertVCFToGenodiveFormat (genotypeFile)
+	convertVCFToACGTByNGSEP (genotypeFile) 
 
-	#convertVCFToACGTByNGSEP (genotypeFile) 
+	#convertVCFToGenodiveFormat (genotypeFile)
 	#numericTetraToNumericDiploGSMatrix (genotypeFile)
 	#convertAABBGWASpolyToNumericFormat (inputFilename)
 	#gwaspTetraToDiploGenotype (genotypeFile)
@@ -54,13 +54,11 @@ main <- function ()
 # Get common sample names
 #-------------------------------------------------------------
 filterByCommonMarkersSamples <- function (genotypeFile, phenotypeFile, genotypeNumFile) {
-	msgmsg ("Filtering by common markers and samples...")
 	geno     = read.csv (file=genotypeFile, check.names=F)
 	genoNum  = read.csv (file=genotypeNumFile, check.names=F)
 	pheno    = read.csv (file=phenotypeFile, check.names=F)
 
 	rownames (genoNum) = genoNum [,1]
-
 
 	# From phenotype, remove duplicated and NA samples
 	pheno  = pheno [!is.na(pheno[,2]),]
@@ -78,11 +76,9 @@ filterByCommonMarkersSamples <- function (genotypeFile, phenotypeFile, genotypeN
 	# Create new geno, pheno
 	genoCommon     = geno  [,c (colnames(geno)[1:3], commonSamples)]
 	genoNumCommon  = genoNum  [commonMarkers, c(colnames(genoNum)[1:3], commonSamples)]
-	phenoCommon = pheno [pheno[,1] %in% commonSamples,]
-	trait       = colnames(phenoCommon)[2]
+	phenoCommon    = pheno [pheno[,1] %in% commonSamples,]
+	trait          = colnames(phenoCommon)[2]
 
-	#genoCommonFile  = paste0 ("out/", addLabel (genotypeFile, "COMMON"))
-	#phenoCommonFile = paste0 ("out/", addLabel (phenotypeFile, "COMMON"))
 	genoCommonFile     = addLabel (genotypeFile, "COMMON")
 	genoNumCommonFile  = addLabel (genotypeNumFile, "COMMON")
 	phenoCommonFile    = addLabel (phenotypeFile, "COMMON")
@@ -221,7 +217,7 @@ imputeNumericMatrix <- function (numericMatrix) {
 gwaspolyToGapitFormat <- function (genotypeFile, phenotypeFile, geneAction, FILES=F) 
 {
 	# Convert phenotype
-	pheno      = read.csv (phenotypeFile)
+	pheno      = read.csv (phenotypeFile, check.names=F)
 	phenoGapit = data.frame (taxa=pheno[,1], pheno [,2, drop=F])
 
 	# Convert genotype to numeric
@@ -704,7 +700,7 @@ gwaspolyToPlinkGenotype <- function (genotypeFile) {
 #----------------------------------------------------------
 bases <- c("A","C","G","T")
 getReferenceAllele <- function (x) {
-	y <- paste(na.omit(x),collapse="")
+	y   <- paste(na.omit(x),collapse="")
 	ans <- apply(array(bases),1,function(z,y){length(grep(z,y,fixed=T))},y)
 
 	if (sum(ans)>2) {stop("Error in genotype matrix: More than 2 alleles")}
@@ -964,16 +960,21 @@ convertVCFToGenodiveFormat <- function (genotypeFile) {
 #----------------------------------------------------------
 ACGTToNumericGenotypeFormat <- function (genotypeFile, ploidy, MAP=F) 
 {
-	NCORES = detectCores()
+	print (genotypeFile)
+	NCORES = detectCores()-1
 	geno = read.csv (file=genotypeFile, header=T, check.names=F)
 
 	markers           = as.matrix(geno[,-(1:3)])
 	sampleNames       = colnames (geno[,-(1:3)])
 	rownames(markers) = geno[,1]
 
-			
 	tmp     <- apply(markers,1,getReferenceAllele)
-	map     <- data.frame(Marker=geno[,1],Chrom=factor(geno[,2],ordered=T),Position=geno[,3], Ref=tmp[,1], Alt=tmp[,2], stringsAsFactors=F)
+	view (geno)
+	view (tmp)
+	print (length( (tmp[1,])))
+	print (length( (tmp[2,])))
+	map     <- data.frame(Marker=geno[,1],Chrom=factor(geno[,2],ordered=T),Position=geno[,3], Ref=tmp[1,], Alt=tmp[2,], stringsAsFactors=F)
+	view (map)
 	write.table (map, "out/map.tbl", sep="\t")
 	map$Ref <- tmp[1,]
 	map$Alt <- tmp[2,]
@@ -992,7 +993,9 @@ ACGTToNumericGenotypeFormat <- function (genotypeFile, ploidy, MAP=F)
 	#ACGTList        = mclapply(seq_len(ncol(matTransposed)), function(i) matTransposed[,i],mc.cores=NCORES)
 	ACGTList        = lapply(seq_len(ncol(matTransposed)), function(i) matTransposed[,i])
 	numList         = mclapply(ACGTList, acgtToNum, mc.cores=NCORES)
-	numericMatrixM  = as.data.frame (numList,col.names=rownames (matRefMarkers))
+	
+	numericMatrixM  = as.data.frame (numList,col.names=rownames (matRefMarkers), optional=F, make.names=F)
+	colnames (numericMatrixM) = rownames (matRefMarkers)
 
 	tM              =  (t(numericMatrixM))
 	colnames (tM)   = sampleNames
@@ -1001,11 +1004,11 @@ ACGTToNumericGenotypeFormat <- function (genotypeFile, ploidy, MAP=F)
 
 	if (MAP == TRUE)
 		return (list(geno=geno, genoNum=newGeno, map=map))
-
-	#else
-	newGenoFile = addLabel (genotypeFile, "NUM")
-	write.csv (newGeno, newGenoFile, quote=F, row.names=F)
-	return (newGenoFile)
+	else {
+		newGenoFile = addLabel (genotypeFile, "NUM")
+		write.csv (newGeno, newGenoFile, quote=F, row.names=F)
+		return (newGenoFile)
+	}
 }
 
 #----------------------------------------------------------
@@ -1227,4 +1230,4 @@ view <- function (data, n=5,m=6, outPrefix="") {
 }
 #----------------------------------------------------------
 #----------------------------------------------------------
-#main ()
+main ()

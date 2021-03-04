@@ -311,6 +311,7 @@ markersVennDiagrams <- function (listOfResultsFile, summaryTable, gwasModel, sco
 		x = list()
 		toolNames = c()
 		for (resultsFile in listOfResultsFile) {
+			print (">>>>>>>>>>> "); print (resultsFile$tool)
 			toolNames  = c (toolNames, resultsFile$tool)
 			markers = dplyr::select (filter (summaryTable, TOOL %in% resultsFile$tool), SNP) %>% .$SNP %>% as.character
 			x          = append (x, list (markers))

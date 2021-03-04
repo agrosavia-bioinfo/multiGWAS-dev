@@ -204,6 +204,8 @@ public class ViewInputs extends javax.swing.JPanel {
         fieldFiltering = new javax.swing.JComboBox<>();
         labelPloidy = new javax.swing.JLabel();
         fieldPloidy = new javax.swing.JComboBox<>();
+        labelR2 = new javax.swing.JLabel();
+        fieldR2 = new javax.swing.JTextField();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(15, 0), new java.awt.Dimension(32767, 0));
         panelFiltersTitle = new javax.swing.JPanel();
         panelFilters = new javax.swing.JPanel();
@@ -234,7 +236,7 @@ public class ViewInputs extends javax.swing.JPanel {
 
         panelPaths.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        labelOutputDir.setText("Output Folder:");
+        labelOutputDir.setText("Working dir:");
 
         fieldOutputDir.setText("/home/lg/AAA");
         fieldOutputDir.setToolTipText("Select genotype file");
@@ -306,9 +308,9 @@ public class ViewInputs extends javax.swing.JPanel {
                 .addGap(35, 35, 35)
                 .addGroup(panelPathsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(fieldOutputDir)
-                    .addComponent(genotypeText, javax.swing.GroupLayout.DEFAULT_SIZE, 297, Short.MAX_VALUE)
-                    .addComponent(mapText, javax.swing.GroupLayout.DEFAULT_SIZE, 297, Short.MAX_VALUE)
-                    .addComponent(fieldPheno, javax.swing.GroupLayout.DEFAULT_SIZE, 297, Short.MAX_VALUE))
+                    .addComponent(genotypeText, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE)
+                    .addComponent(mapText, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE)
+                    .addComponent(fieldPheno, javax.swing.GroupLayout.DEFAULT_SIZE, 301, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(panelPathsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(selOutputDirButton, javax.swing.GroupLayout.Alignment.TRAILING)
@@ -375,7 +377,7 @@ public class ViewInputs extends javax.swing.JPanel {
         panelParameters.setAlignmentY(1.5F);
         panelParameters.setPreferredSize(new java.awt.Dimension(350, 250));
 
-        jLabel8.setText("GWAS Model:");
+        jLabel8.setText("Analysis mode:");
 
         fieldModel.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Full", "Naive" }));
 
@@ -410,6 +412,10 @@ public class ViewInputs extends javax.swing.JPanel {
 
         fieldPloidy.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "4", "2" }));
 
+        labelR2.setText("LD threshold (R2):");
+
+        fieldR2.setText("1.0");
+
         javax.swing.GroupLayout panelParametersLayout = new javax.swing.GroupLayout(panelParameters);
         panelParameters.setLayout(panelParametersLayout);
         panelParametersLayout.setHorizontalGroup(
@@ -417,20 +423,26 @@ public class ViewInputs extends javax.swing.JPanel {
             .addGroup(panelParametersLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(labelPloidy)
-                    .addComponent(jLabel8)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel5)
-                    .addComponent(jLabel6))
-                .addGap(5, 5, 5)
-                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
-                    .addComponent(fieldPloidy, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(fieldModel, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(fieldSignificance)
-                    .addComponent(fieldCorrection, 0, 105, Short.MAX_VALUE)
-                    .addComponent(fieldSNPs, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(fieldFiltering, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(panelParametersLayout.createSequentialGroup()
+                        .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(labelPloidy)
+                            .addComponent(jLabel8)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel5)
+                            .addComponent(jLabel6))
+                        .addGap(5, 5, 5)
+                        .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                            .addComponent(fieldPloidy, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(fieldModel, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(fieldSignificance)
+                            .addComponent(fieldCorrection, 0, 105, Short.MAX_VALUE)
+                            .addComponent(fieldSNPs, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(fieldFiltering, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(panelParametersLayout.createSequentialGroup()
+                        .addComponent(labelR2, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(fieldR2, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(72, 72, 72))
         );
         panelParametersLayout.setVerticalGroup(
@@ -438,29 +450,33 @@ public class ViewInputs extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelParametersLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(fieldPloidy)
+                    .addComponent(fieldPloidy, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(labelPloidy))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel8)
-                    .addComponent(fieldModel))
-                .addGap(8, 8, 8)
+                    .addComponent(fieldModel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
-                    .addComponent(fieldSignificance))
-                .addGap(18, 18, 18)
+                    .addComponent(fieldSignificance, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(14, 14, 14)
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel4)
-                    .addComponent(fieldCorrection))
+                    .addComponent(fieldCorrection, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(11, 11, 11)
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(fieldSNPs)
+                    .addComponent(fieldSNPs, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel5))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel6)
-                    .addComponent(fieldFiltering))
-                .addGap(34, 34, 34))
+                    .addComponent(fieldFiltering, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelR2)
+                    .addComponent(fieldR2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(6, 6, 6))
         );
 
         panelParametersTitle.add(panelParameters, java.awt.BorderLayout.CENTER);
@@ -559,7 +575,7 @@ public class ViewInputs extends javax.swing.JPanel {
 
         panelOptions.add(panelFiltersTitle);
 
-        panelInputs.add(panelOptions, java.awt.BorderLayout.WEST);
+        panelInputs.add(panelOptions, java.awt.BorderLayout.CENTER);
 
         add(panelInputs, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
@@ -657,6 +673,7 @@ public class ViewInputs extends javax.swing.JPanel {
     private javax.swing.JTextField fieldOutputDir;
     private javax.swing.JTextField fieldPheno;
     private javax.swing.JComboBox<String> fieldPloidy;
+    private javax.swing.JTextField fieldR2;
     private javax.swing.JComboBox<String> fieldSNPs;
     private javax.swing.JTextField fieldSignificance;
     private javax.swing.Box.Filler filler1;
@@ -679,6 +696,7 @@ public class ViewInputs extends javax.swing.JPanel {
     private javax.swing.JLabel labelInputOutput;
     private javax.swing.JLabel labelOutputDir;
     private javax.swing.JLabel labelPloidy;
+    private javax.swing.JLabel labelR2;
     private javax.swing.JLabel mapLabel;
     private javax.swing.JButton mapSelButton;
     private javax.swing.JTextField mapText;
