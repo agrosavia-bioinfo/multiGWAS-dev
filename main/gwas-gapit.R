@@ -65,7 +65,7 @@ runGapit <- function (geneAction, genotypeFile, phenotypeFile, scoresFile, param
 		gapitModel = "GLM"
 
 	#out <- GAPIT(Y=phenotype, GM=map, GD=genotype, model="MLM", file.output=F)#, kinship.algorithm="None")
-	out <- GAPIT(Y=phenotype, GM=map, GD=genotype, model=gapitModel, file.output=F)#, kinship.algorithm="None")
+	out <- GAPIT(Y=phenotype, GM=map, GD=genotype, model=gapitModel, file.output=F, QC=T)#, kinship.algorithm="None")
 	scoresGapit = out$GWAS
 
 	# Write source scores

@@ -2,10 +2,12 @@
 #-------------------------------------------------------------
 # SHEsis tool
 # Shesis uses a low significance level of 0.01 as their pvalues are inflates
+# LOG: 
+#      v1.01: Relatedness using kinship matrix from GWASpoly (>0.9) 
 #-------------------------------------------------------------
 runToolShesis <- function (params) 
 {
-	msgmsg ("Running SHEsis GWAS...")
+	msgmsg ("Running SHEsis... ")
 
 	geneAction = params$geneAction
 	#if (geneAction != "automatic" & geneAction != "additive")
@@ -16,33 +18,58 @@ runToolShesis <- function (params)
 	if (params$gwasModel == "naive") {
 		dataShesis = gwaspolyToShesisGenoPheno (params$genotypeFile, params$phenotypeFile, params$ploidy, params$traitType)
 	} else if (params$gwasModel == "full") {
-		# Apply kinship and filter individuals
-		#inGeno  = "out/filtered-plink-genotype"       # Uses plink file
-		inGeno   = params$plinkGenotypeFile
-
-		kinFile = paste0 (inGeno,"-kinship-shesis")
-		cmm     = sprintf ("%s/main/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, kinFile)
-		runCommand (cmm, "log-kinship.log")
-
-		# Filter geno/pheno to individuals, write out, and convert to SHEsis format
-		kinshipIndividuals  = read.table (file=paste0(kinFile, ".ped"), sep="\t", check.names=F)
-		individuals         = as.character (kinshipIndividuals [,1])
+		closestIndividuals   = getClosestIndividuals ("out/GWASpoly-kinship-matrix.csv", params)
 
 		genotype             = read.csv (file=params$genotypeFile, header=T, check.names=F)
 		phenotype            = read.csv (file=params$phenotypeFile, header=T, check.names=F)
-		genotypeKinship      = genotype [, c(colnames (genotype)[1:3], individuals)]
-		phenotypeKinship     = phenotype [phenotype [,1] %in% individuals,]
+		genotypeKinship      = genotype [, !(colnames (genotype) %in% closestIndividuals)]
+		phenotypeKinship     = phenotype [!(phenotype [,1] %in% closestIndividuals),]
+
 		genotypeFileKinship  = addLabel (params$genotypeFile,  "kinship-shesis")
 		phenotypeFileKinship = addLabel (params$phenotypeFile, "kinship-shesis")
 		write.table (file=genotypeFileKinship,  genotypeKinship,  row.names=F, quote=F, sep=",")
 		write.table (file=phenotypeFileKinship, phenotypeKinship, row.names=F, quote=F, sep=",")
 
 		dataShesis = gwaspolyToShesisGenoPheno (genotypeFileKinship, phenotypeFileKinship, params$ploidy, params$traitType)
+	}else {
+		message ("ERROR: GWAS model: ", params$gwasModel, " not supported")
+		quit ()
 	}
 
 	shesis  = runShesisCommand (params$traitType, dataShesis$genoPhenoFile, dataShesis$markersFile, geneAction, params)
 
 	return (list (tool="SHEsis", scoresFile=shesis$scoresFile, scores=shesis$scoresMgwas))
+}
+
+#-------------------------------------------------------------
+# Get closest relatives using kinship matrix from GWASpoly
+#-------------------------------------------------------------
+getClosestIndividuals <- function (kinshipMatrixFile, params) {
+	#----- Flatten kinship matrix to pairs of individuals ----
+	flattenKMat <- function(kmat) {
+	  ut <- upper.tri(kmat)
+	  data.frame( IND1 = rownames(kmat)[row(kmat)[ut]],
+				  IND2 = rownames(kmat)[col(kmat)[ut]],
+				  K  =(kmat)[ut], stringsAsFactors=F)
+	}
+	#------ Create kinship matrix using GWASpoly -------------
+	createKinshipMatrix <- function (kinshipMatrixFile, params) {
+		data1 = read.GWASpoly (ploidy = params$ploidy, pheno.file = params$phenotypeFile, 
+								geno.file = params$genotypeFile, format = "ACGT", n.traits = 1, delim=",")
+		data2 = set.K (data1)
+		kmat  = data2@K  
+		write.csv (kmat, kinshipMatrixFile, quote=F)
+		return (kmat)
+	}
+	#---------------------------------------------------------
+	if (!file.exists (kinshipMatrixFile)) 
+		kmat = createKinshipMatrix (kinshipMatrixFile, params)
+	else 
+		kmat = read.csv (kinshipMatrixFile, row.names=1)
+
+	kTable = flattenKMat (kmat)
+	closest = kTable$IND2 [abs (kTable$K) > 0.9 ]
+	return (closest)
 }
 
 #-------------------------------------------------------------

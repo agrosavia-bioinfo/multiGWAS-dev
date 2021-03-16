@@ -9199,7 +9199,7 @@ GAPIT.Circle.Manhatton.Plot <- function(
         gs.blup=cbind(BLUE,NA,NA,0,NA)
         
         if(!is.null(gs))gs.blup=gs$BLUP
-        BB= merge(gs.blup, BLUE, by.x = "Taxa", by.y = "Taxa")
+        BB= merge(gs.blup, BLUE, by.x = "Taxa", by.y = "Taxa", suffixes=c("A","B"))
         if (is.null(my_allCV)){my_allX=matrix(1,length(my_taxa),1)
         }else{
           # my_allX=as.matrix(my_allCV[,-1])

@@ -27,6 +27,7 @@ public class ViewResults extends JPanel {
     }
 
     public void showResults(String htmlFilename) {
+		/*
         try {
             File file = new File(htmlFilename);
             URL url = file.toURI().toURL();
@@ -37,5 +38,6 @@ public class ViewResults extends JPanel {
             System.out.println(ex);
             Logger.getLogger(ViewResults.class.getName()).log(Level.SEVERE, null, ex);
         }
+		*/
     }
 }

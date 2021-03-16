@@ -20,7 +20,6 @@ public class ViewToolBar extends javax.swing.JPanel {
         initComponents();
         radioButtonAdditiveGA.setActionCommand("Additive");
         radioButtonDominantGA.setActionCommand("Dominant");
-        radioButtonGeneralGA.setActionCommand("General");
         radioButtonAllGA.setActionCommand("All");
     }
     
@@ -61,6 +60,7 @@ public class ViewToolBar extends javax.swing.JPanel {
 
         jSeparator7 = new javax.swing.JSeparator();
         buttonGroupGeneAction = new javax.swing.ButtonGroup();
+        jButton1 = new javax.swing.JButton();
         jToolBar1 = new javax.swing.JToolBar();
         panelToolBar = new javax.swing.JPanel();
         panelTools = new javax.swing.JPanel();
@@ -76,11 +76,12 @@ public class ViewToolBar extends javax.swing.JPanel {
         subpanelGeneAction = new javax.swing.JPanel();
         radioButtonAdditiveGA = new javax.swing.JRadioButton();
         radioButtonDominantGA = new javax.swing.JRadioButton();
-        radioButtonGeneralGA = new javax.swing.JRadioButton();
         radioButtonAllGA = new javax.swing.JRadioButton();
         panelRun = new javax.swing.JPanel();
         buttonRun = new javax.swing.JButton();
         labelMultiGWAS = new javax.swing.JLabel();
+
+        jButton1.setText("jButton1");
 
         setLayout(new java.awt.CardLayout());
 
@@ -118,7 +119,7 @@ public class ViewToolBar extends javax.swing.JPanel {
         subpanelTools.add(cboxShesis);
 
         cboxPlink.setSelected(true);
-        cboxPlink.setText("PLINK");
+        cboxPlink.setText("GAPIT");
         subpanelTools.add(cboxPlink);
 
         cboxTassel.setSelected(true);
@@ -149,10 +150,6 @@ public class ViewToolBar extends javax.swing.JPanel {
         radioButtonDominantGA.setText("Dominant");
         subpanelGeneAction.add(radioButtonDominantGA);
 
-        buttonGroupGeneAction.add(radioButtonGeneralGA);
-        radioButtonGeneralGA.setText("General");
-        subpanelGeneAction.add(radioButtonGeneralGA);
-
         buttonGroupGeneAction.add(radioButtonAllGA);
         radioButtonAllGA.setText("All");
         subpanelGeneAction.add(radioButtonAllGA);
@@ -163,6 +160,7 @@ public class ViewToolBar extends javax.swing.JPanel {
 
         panelRun.setLayout(null);
 
+        buttonRun.setForeground(new java.awt.Color(255, 102, 102));
         buttonRun.setText("Run");
         buttonRun.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -170,7 +168,7 @@ public class ViewToolBar extends javax.swing.JPanel {
             }
         });
         panelRun.add(buttonRun);
-        buttonRun.setBounds(40, 40, 61, 25);
+        buttonRun.setBounds(40, 40, 70, 24);
 
         panelTools.add(panelRun);
 
@@ -203,6 +201,7 @@ public class ViewToolBar extends javax.swing.JPanel {
     private javax.swing.JCheckBox cboxPlink;
     private javax.swing.JCheckBox cboxShesis;
     private javax.swing.JCheckBox cboxTassel;
+    private javax.swing.JButton jButton1;
     private javax.swing.JSeparator jSeparator7;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JLabel labelGeneAction;
@@ -216,7 +215,6 @@ public class ViewToolBar extends javax.swing.JPanel {
     private javax.swing.JRadioButton radioButtonAdditiveGA;
     private javax.swing.JRadioButton radioButtonAllGA;
     private javax.swing.JRadioButton radioButtonDominantGA;
-    private javax.swing.JRadioButton radioButtonGeneralGA;
     private javax.swing.JPanel subpanelGeneAction;
     private javax.swing.JPanel subpanelTools;
     // End of variables declaration//GEN-END:variables

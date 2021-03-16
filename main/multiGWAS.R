@@ -28,6 +28,67 @@ usageInstructions <- function () {
 }
 
 #-------------------------------------------------------------
+# Used to run in parallel the other functions
+#-------------------------------------------------------------
+runGWASTools <- function () {
+	runOneTool <- function (tool, params) {
+		if      (tool=="gwaspoly") runToolGwaspoly (params)
+		else if (tool=="shesis")   runToolShesis (params)
+		else if (tool=="gapit")    runToolGapit (params)
+		else if (tool=="tassel")   runToolTassel (params)
+		else if (tool=="plink")    runToolPlink (params)
+		else                       stop ("Tool not supported")
+	}
+
+	# A string containing the names of the tools to run (e.g. "GWASpoly SHEsis PLINK TASSEL")
+	msg ("Preparing to execute in parallel the GWAS tools:") 
+	tools = strsplit(params$tools ,split=" ")[[1]]
+	for (tool in tools) 
+		msgmsg ("Running ", tool)
+
+	#listOfResultsFile     = mclapply (tools, runOneTool, params, mc.cores=NCORES, mc.silent=SILENT)
+	listOfResultsFile     = mclapply (tools, runOneTool, params, mc.cores=NCORES, mc.silent=FALSE)
+	listOfResultsFileBest = selectBestGeneActionModelAllTools (listOfResultsFile, params$geneAction, params$nBest)
+	listOfResultsFileLD   = runLinkageDisequilibriumAnalysis (listOfResultsFileBest, params$nBest, params$genotypeNumFile, params$R2)
+
+	return (listOfResultsFileLD)
+}
+
+
+#-------------------------------------------------------------
+# Main for a single trait
+#-------------------------------------------------------------
+mainSingleTrait <- function (traitParamsFile) {
+	# Copy files to working dirs and create output dirs
+	params   <<- getTraitConfig (traitParamsFile)
+
+	# Read, filter, and check phenotype and genotype
+	msg ("Preprocessing genomic data (Filtering and Formating data)...")
+
+	data <- genoPhenoMapProcessing (params$genotypeFile, params$genotypeFormat,
+									params$phenotypeFile, params$mapFile)
+	params$trait           <<- data$trait
+	params$genotypeNumFile <<- data$genotypeNumFile
+	params$nBest           <<- as.integer (params$nBest)
+
+	msg ("Converting genotype/phenotype to tools formats...")
+	data = convertGenotypeToToolFormats (data$genotypeFile, data$phenotypeFile)
+	params$genotypeFile    <<- data$genotypeFile
+	params$phenotypeFile   <<- data$phenotypeFile
+
+	# Run the four tools in parallel
+	listOfResultsFile = runGWASTools ()
+
+	# Create reports
+	msg ("Creating reports (Table, Venn diagrams, Manhattan&QQ plots, SNP profiles)...")
+	createReports (listOfResultsFile, params)
+
+	# Move out files to output dir
+	msg ("Moving files to output folders...")
+	moveOutFiles (params$outputDir, params$reportDir)
+}
+
+#-------------------------------------------------------------
 # Main for multi traits
 #-------------------------------------------------------------
 main <- function () {
@@ -113,36 +174,7 @@ createTraitConfigFiles <- function (phenotype, traitName, configFile, params)
 	return (traitParamsFile)
 }
 
-#-------------------------------------------------------------
-# Main for a single trait
-#-------------------------------------------------------------
-mainSingleTrait <- function (traitParamsFile) {
-	# Copy files to working dirs and create output dirs
-	params   <<- getTraitConfig (traitParamsFile)
 
-	# Read, filter, and check phenotype and genotype
-	msg ("Preprocessing genomic data (Filtering and Formating data)...")
-
-	data <- genoPhenoMapProcessing (params$genotypeFile, params$genotypeFormat,
-									params$phenotypeFile, params$mapFile)
-
-	params$genotypeFile    <<- data$genotypeFile
-	params$phenotypeFile   <<- data$phenotypeFile
-	params$trait           <<- data$trait
-	params$genotypeNumFile <<- data$genotypeNumFile
-	params$nBest           <<- as.integer (params$nBest)
-
-	# Run the four tools in parallel
-	listOfResultsFile = runGWASTools ()
-
-	# Create reports
-	msg ("Creating reports (Table, Venn diagrams, Manhattan&QQ plots, SNP profiles)...")
-	createReports (listOfResultsFile, params)
-
-	# Move out files to output dir
-	msg ("Moving files to output folders...")
-	moveOutFiles (params$outputDir, params$reportDir)
-}
 #-------------------------------------------------------------
 # Read configuration parameters and set working directories
 #   - Create dir, if it exists, it is renamed as old-XXXX
@@ -257,32 +289,6 @@ readCheckConfigParameters <- function (paramsFile) {
 	return (params)
 }
 
-#-------------------------------------------------------------
-# Used to run in parallel the other functions
-#-------------------------------------------------------------
-runGWASTools <- function () {
-	runOneTool <- function (tool, params) {
-		if      (tool=="gwaspoly") runToolGwaspoly (params)
-		else if (tool=="shesis")   runToolShesis (params)
-		else if (tool=="gapit")    runToolGapit (params)
-		else if (tool=="tassel")   runToolTassel (params)
-		else if (tool=="plink")    runToolPlink (params)
-		else                       stop ("Tool not supported")
-	}
-
-	# A string containing the names of the tools to run (e.g. "GWASpoly SHEsis PLINK TASSEL")
-	msg ("Preparing to execute in parallel the GWAS tools:") 
-	tools = strsplit(params$tools ,split=" ")[[1]]
-	for (tool in tools) 
-		msgmsg ("Running ", tool)
-
-	listOfResultsFile     = mclapply (tools, runOneTool, params, mc.cores=NCORES, mc.silent=SILENT)
-	listOfResultsFileBest = selectBestGeneActionModelAllTools (listOfResultsFile, params$geneAction, params$nBest)
-	createTableSNPsHighLDAllTools (listOfResultsFileBest, params$nBest, params$genotypeNumFile, params$R2)
-
-	return (listOfResultsFileBest)
-}
-
 #-----------------------------------------------------------
 # Select best N SNPs from multiple action models (for GWASpoly and TASSEL)
 # Uses three criteria: best GC, best replicability, and best significants
@@ -365,18 +371,56 @@ selectBestGeneActionModelTool <- function (scoresTool, nBest, tool, geneAction) 
 
 	return (bestScoresTool)
 }
+#-----------------------------------------------------------------------
+# Calculates LD for each Tool's SNP and rename pairs of SNPs
+# added the new file to the listOfResults
+#-----------------------------------------------------------------------
+runLinkageDisequilibriumAnalysis <- function (listOfResultsFile, nBest, genotypeNumFile, R2) {
+	msg ("Linkage disequilibrium analysis...")
+	ldTable = createLinkageDisequilibriumTable (listOfResultsFile, nBest, genotypeNumFile, R2) 
+	if (is.null (ldTable))
+		return (listOfResultsFile)
+
+	i = 1
+	for (res in listOfResultsFile) {
+		msgmsg ("LD in ", res$tool)
+		scoresLD = res$scores
+		rownames (scoresLD) = scoresLD$Marker
+		scoresLD$Marker     = as.character (scoresLD$Marker)
+		for (k in 1:nrow (ldTable)) {
+			snp1    = ldTable [k, "SNP1"]
+			snp2    = ldTable [k, "SNP2"]
+			newName = as.character (ldTable [k, "LD_SNP"])
+			scoresLD [scoresLD$Marker %in% snp1 ,"Marker"] = newName
+			scoresLD [scoresLD$Marker %in% snp2 ,"Marker"] = newName
+		}
+		scoresLD     = arrange (scoresLD, -DIFF)
+		scoresLD     = scoresLD [!duplicated (scoresLD$Marker),]
+		scoresLD     = scoresLD [1:nBest,]
+		scoresLD     = scoresLD [grepl("LD", scoresLD$Marker),]
+		if (nrow (scoresLD) > 0) {
+				scoresLDFile = addLabel (res$scoresFile, "LD")
+				write.table (scoresLD, scoresLDFile, sep="\t", quote=F, row.names=F)
+				view (listOfResultsFile [[i]]$scores)
+				listOfResultsFile [[i]]["scoresLDFile"] = scoresLDFile
+		}
+		i = i+1
+	}
+	return (listOfResultsFile)
+}
+
 #-------------------------------------------------------
 # Create a table for SNPs in all tools in high LD
 #-------------------------------------------------------
-createTableSNPsHighLDAllTools <- function (listOfResultsFile, nBest, genotypeNumFile, R2) {
-	msg ("Analyzing linkage disequilibrium for SNPs in each tool...")
-	
+createLinkageDisequilibriumTable <- function (listOfResultsFile, nBest, genotypeNumFile, R2) {
+	# Join all SNPs in one vector
 	allSNPs = NULL
 	for (res in listOfResultsFile) {
 		toolSNPs = res$scores$Marker [1:nBest] 
-		allSNPs  = if (is.null (allSNPs)) toolSNPs else union (allSNPs, toolSNPs)
+		allSNPs  = union (allSNPs, toolSNPs)
 	}
 
+	# Run linkage disequilibrium
 	genotypeNum = read.csv (genotypeNumFile, row.names=1);
 	genomat     = as.matrix (genotypeNum [,-1:-2]); 
 	genomatSNPs = genomat [allSNPs,]; 
@@ -385,7 +429,7 @@ createTableSNPsHighLDAllTools <- function (listOfResultsFile, nBest, genotypeNum
 	ldMatrix    = ldMatrixAll [,c(3,4,7)]
 
 	# Create a table with LD SNPs
-	i=1
+	i=1;k=1
 	snpsLDTable = NULL
 	while (i <= nrow (ldMatrix)) {
 		if (ldMatrix[i,"r2"] > R2) {
@@ -393,8 +437,9 @@ createTableSNPsHighLDAllTools <- function (listOfResultsFile, nBest, genotypeNum
 			snpj = ldMatrix[i,"snpj"]
 			r2   = ldMatrix[i,"r2"]
 			msgmsg (sprintf ("SNPs in high LD: %s and %s with R2=%s", snpi, snpj, r2))
-			df          = data.frame (SNP1=snpi, SNP2=snpj, R2=r2)
+			df          = data.frame (LD_SNP=paste0 ("LD_SNP_",k),SNP1=snpi, SNP2=snpj, R2=r2, stringsAsFactors=F)
 			snpsLDTable = rbind (snpsLDTable, df)
+			k = k+1
 		}
 		i = i+1
 	}
@@ -406,138 +451,9 @@ createTableSNPsHighLDAllTools <- function (listOfResultsFile, nBest, genotypeNum
 		write.csv (snpsLDTable, SNPsHighLDFile, quote=F, row.names=F)
 		params$SNPsHighLDFile <<- SNPsHighLDFile
 	}
+	return (snpsLDTable)
 }
-
-#-----------------------------------------------------------------------
-# Return a vector of SNPs in high LD
-#-----------------------------------------------------------------------
-getSNPsHighLDTool <- function (genoNumFile, scores, maxLD, maxBest, tool) {
-	if (!exists ("genotypeNum")) 
-		genotypeNum    <<- read.csv (genoNumFile, row.names=1);
-
-	genomat = as.matrix (genotypeNum [,-1:-2]); 
-
-	# Get Top SNPs from score file
-	N = if (length (scores$Marker) > 2*maxBest) 2*maxBest else length (scores$Marker) 
-	snpList = as.character (scores$Marker [1:N]) 
-
-	# Get genotypes for SNPs and calculate LD matrix (r2)
-	genomatSNPs = genomat [snpList,]; 
-	ldMatrixAll = mldest(genomatSNPs, K = 4, nc = 1, type = "comp", se=F);
-	ldMatrix    = ldMatrixAll [,c(3,4,7)]
-
-	# Create a table with LD SNPs
-	i=1
-	snpsLD = NULL
-	msgmsg (tool)
-	while (i <= nrow (ldMatrix)) {
-		if (ldMatrix[i,"r2"] > maxLD) {
-			msgmsg (sprintf ("SNPs of %s in high LD: %s and %s with R2=%s", tool,  ldMatrix[i,"snpi"], ldMatrix[i,"snpj"], ldMatrix[i,"r2"]))
-			df     = data.frame (TOOL=tool,SNP1=ldMatrix [i, "snpi"], SNP2=ldMatrix [i, "snpj"], R2=ldMatrix[i,"r2"])
-			snpsLD = rbind (snpsLD, df)
-			#snpj     = ldMatrix [i, "snpj"]
-			#ldMatrix = ldMatrix [ldMatrix$snpi != snpj,]
-			#snpsLD   = c(snpsLD, snpj)
-		}
-		i = i+1
-	}
-	return (snpsLD)
-}
-
-
-
-#-------------------------------------------------------
-# Create a table for SNPs in all tools in high LD
-#-------------------------------------------------------
-old_createTableSNPsHighLDAllTools <- function (listOfResultsFile, nBest, genotypeNumFile, R2) {
-	msg ("Analyzing linkage disequilibrium for SNPs in each tool...")
-	# Create table with all scores
-	snpsLDTable = NULL
-	for (res in listOfResultsFile) {
-		scoresTool  = data.frame (TOOL=res$tool, res$scores [,1:9]) # 1:9 are the first common columns for scores
-		snpsLD      = getSNPsHighLDTool (genotypeNumFile, scoresTool, R2, nBest, res$tool)
-		snpsLDTable = if (!is.null (snpsLD)) rbind (snpsLDTable, snpsLD)
-	}
-
-	if (is.null (snpsLDTable))
-		params$SNPsHighLDFile <<- NULL
-	else {
-		SNPsHighLDFile = "out/out-SNPsHighLD-Table.csv"
-		write.csv (snpsLDTable, SNPsHighLDFile, quote=F, row.names=F)
-		params$SNPsHighLDFile <<- SNPsHighLDFile
-	}
-}
-
-#-----------------------------------------------------------------------
-# Return a vector of SNPs in high LD
-#-----------------------------------------------------------------------
-old_getSNPsHighLDTool <- function (genoNumFile, scores, maxLD, maxBest, tool) {
-	if (!exists ("genotypeNum")) 
-		genotypeNum    <<- read.csv (genoNumFile, row.names=1);
-
-	genomat = as.matrix (genotypeNum [,-1:-2]); 
-
-	# Get Top SNPs from score file
-	N = if (length (scores$Marker) > 2*maxBest) 2*maxBest else length (scores$Marker) 
-	snpList = as.character (scores$Marker [1:N]) 
-
-	# Get genotypes for SNPs and calculate LD matrix (r2)
-	genomatSNPs = genomat [snpList,]; 
-	print (NCORES)
-	ldMatrixAll = mldest(genomatSNPs, K = 4, nc = 1, type = "comp", se=F);
-	ldMatrix    = ldMatrixAll [,c(3,4,7)]
-
-	# Create a table with LD SNPs
-	i=1
-	snpsLD = NULL
-	msgmsg (tool)
-	while (i <= nrow (ldMatrix)) {
-		if (ldMatrix[i,"r2"] > maxLD) {
-			msgmsg (sprintf ("SNPs of %s in high LD: %s and %s with R2=%s", tool,  ldMatrix[i,"snpi"], ldMatrix[i,"snpj"], ldMatrix[i,"r2"]))
-			df     = data.frame (TOOL=tool,SNP1=ldMatrix [i, "snpi"], SNP2=ldMatrix [i, "snpj"], R2=ldMatrix[i,"r2"])
-			snpsLD = rbind (snpsLD, df)
-			#snpj     = ldMatrix [i, "snpj"]
-			#ldMatrix = ldMatrix [ldMatrix$snpi != snpj,]
-			#snpsLD   = c(snpsLD, snpj)
-		}
-		i = i+1
-	}
-	return (snpsLD)
-}
-
-#-------------------------------------------------------
-# Analyze and remove for each tool SNPs in high LD
-#-------------------------------------------------------
-removeLinkageDisequilibriumSNPsTools <- function (listOfResultsFile, params) {
-	msg ("Analyzing linkage disequilibrium for SNPs in each tool...")
-	# Create table with all scores
-	scoresAll = NULL
-	for (res in listOfResultsFile) {
-		df = data.frame (TOOL=res$tool, res$scores [,1:9]) # 1:9 are the first common columns for scores
-		scoresAll = rbind (scoresAll, df)
-	}
-
-	# Remove SNPs in LD from table with all scores
-	'%ni%' <- Negate('%in%')
-	for (res in listOfResultsFile) { 
-		scoresTool = filter (scoresAll, TOOL==res$tool)
-		snpsLD = matchSNPsByLDSingleTool (params$genotypeNumFile, scoresTool, 0.9, params$nBest, res$tool)
-		scoresAll = scoresAll [scoresAll$Marker %in% setdiff (scoresAll$Marker, snpsLD),]
-	}
-
-	# Create new versions of score files
-	i = 1; 
-	for (res in listOfResultsFile) {
-		scoresTool   = scoresAll [scoresAll$TOOL %in% res$tool,] 
-		scoresFileLD = addLabel (res$scoresFile, "LD")
-		write.table (scoresTool, scoresFileLD, sep="\t", quote=F, row.names=F)
-		listOfResultsFile [[i]]$scoresFile = scoresFileLD
-		i = i + 1
-	}
-
-	return (listOfResultsFile)
-}
-
+	
 #-------------------------------------------------------------
 # Move output files to specific directories
 #-------------------------------------------------------------
@@ -571,19 +487,17 @@ genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile,
 
 	# Remove no polymorohic markers (MAF > 0.0) and Write chromosome info (map.tbl)
 	msgmsg ("Filtering no polymorohic markers (MAF > THRESHOLD) ...") 
-	maf             = filterByMAF (validGenotypeFile, params)
+	maf             = filterByMAF (validGenotypeFile, params, 0.0)
+	#maf             = filterByMAF (validGenotypeFile, params, params$thresholdMAF)
 	genotypeFile    = maf$genotypeFile
 	genotypeNumFile = maf$genotypeNumFile
 
 	if (params$filtering==FALSE) {
-		msgmsg ("Without filters")
+		msg ("Without filters")
 	}else {
-		msgmsg ("Using filters...")
-		message (">>>>>>>>>>")
-		oldg =  genotypeFile
+		msg ("Using filters...")
 		msgmsg ("Filtering by missing markers and samples...")
 		genotypeFile  = filterByMissingMarkersAndSamples (genotypeFile, params$GENO, params$MIND) 
-		genotypeFile = oldg
 	}
 
 	# Filter by common markers, samples and remove duplicated and NA phenos
@@ -600,6 +514,13 @@ genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile,
 	nSamples = ncol (common$genotype)
 	msgmsg ("N =",nSamples,"individuals with phenotypic and genotypic information \n")
 
+	return (list (genotypeFile=genotypeFile, phenotypeFile=phenotypeFile, trait=common$trait, genotypeNumFile=genotypeNumFile))
+}
+
+#-------------------------------------------------------------
+# Convert genotype to tool formats
+#-------------------------------------------------------------
+convertGenotypeToToolFormats <- function (genotypeFile, phenotypeFile) {
 	# Create PLINK geno/pheno (For SHEsis and TASSEL)
 	if (grepl("plink", params$tool) | grepl("tassel",params$tools)) {
 		msgmsg ("Converting phenotype to PLINK format (.ped, .map, .bim, .fam, .bed)...")
@@ -609,8 +530,7 @@ genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile,
 		params$plinkGenotypeFile <<- plinkGenotype
 	}
 
-	params$tools = strsplit(tolower (params$tools) ,split=" ")[[1]]
-	if ("tassel" %in% params$tools) {
+	if (grepl("tassel", params$tool)) {
 		msgmsg ("Converting phenotype to TASSEL format (.vcf)...")
 		tasselPhenotype = gwaspolyToTasselPhenotype (phenotypeFile) 
 		tasselGenotype  = plinkToVCFFormat (plinkGenotype)
@@ -618,7 +538,7 @@ genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile,
 		params$tasselGenotypeFile <<- tasselGenotype
 	}
 
-	if ("gapit" %in% params$tools) {
+	if (grepl("gapit", params$tool)) {
 		msgmsg ("Converting geno/pheno to GAPIT format (.vcf)...")
 		gapit = gwaspolyToGapitFormat (genotypeFile, phenotypeFile, params$geneAction, FILES=T)
 		params$gapitGenotypeFile  <<- gapit$geno
@@ -626,8 +546,9 @@ genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile,
 		params$gapitMapFile       <<- gapit$map
 	}
 
-	return (list (genotypeFile=genotypeFile, phenotypeFile=phenotypeFile, trait=common$trait, genotypeNumFile=genotypeNumFile))
+	return (list (genotypeFile=genotypeFile, phenotypeFile=phenotypeFile))
 }
+
 
 #-------------------------------------------------------------
 # Check valid markers: 
@@ -779,13 +700,15 @@ impute.mode <- function(x) {
 # Impute, filter by MAF, unify geno and pheno names
 # Only for "ACGT" format (For other formats see GWASpoly main)
 #-------------------------------------------------------------
-filterByMAF <- function(genotypeFile, params) {
+filterByMAF <- function(genotypeFile, params, thresholdMAF) {
 	ploidy = params$ploidy
 
-	if (params$filtering == TRUE)
-		thresholdMAF = params$MAF
-	else
-		thresholdMAF = 0.0
+	if (is.null (thresholdMAF)) {
+		if (params$filtering == TRUE)
+			thresholdMAF = params$MAF
+		else
+			thresholdMAF = 0.0
+	}
 
 	outNum       = ACGTToNumericGenotypeFormat (genotypeFile, ploidy, MAP=T)
 	geno         = outNum$geno
@@ -829,7 +752,7 @@ filterByMAF <- function(genotypeFile, params) {
 	# Write numeric geno
 	rownames (numericGeno) = numericGeno [,1]
 	numericGeno            = numericGeno [polymorphic, ]
-	genotypeNumFile        = addLabel (genotypeFile, "NUM")  
+	genotypeNumFile        = addLabel (genotypeFile, "MAF-NUM")  
 	write.csv (numericGeno, genotypeNumFile, quote=F, row.names=F)
 							  
 	return (list (genotypeFile=genoMAFFile, geno=genoMAF, genotypeNumFile=genotypeNumFile))

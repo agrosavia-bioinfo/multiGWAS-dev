@@ -6,6 +6,11 @@
     </Component>
     <Component class="javax.swing.ButtonGroup" name="buttonGroupGeneAction">
     </Component>
+    <Component class="javax.swing.JButton" name="jButton1">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="jButton1"/>
+      </Properties>
+    </Component>
   </NonVisualComponents>
   <AuxValues>
     <AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/>
@@ -131,7 +136,7 @@
                         <Component class="javax.swing.JCheckBox" name="cboxPlink">
                           <Properties>
                             <Property name="selected" type="boolean" value="true"/>
-                            <Property name="text" type="java.lang.String" value="PLINK"/>
+                            <Property name="text" type="java.lang.String" value="GAPIT"/>
                           </Properties>
                         </Component>
                         <Component class="javax.swing.JCheckBox" name="cboxTassel">
@@ -203,14 +208,6 @@
                             <Property name="text" type="java.lang.String" value="Dominant"/>
                           </Properties>
                         </Component>
-                        <Component class="javax.swing.JRadioButton" name="radioButtonGeneralGA">
-                          <Properties>
-                            <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
-                              <ComponentRef name="buttonGroupGeneAction"/>
-                            </Property>
-                            <Property name="text" type="java.lang.String" value="General"/>
-                          </Properties>
-                        </Component>
                         <Component class="javax.swing.JRadioButton" name="radioButtonAllGA">
                           <Properties>
                             <Property name="buttonGroup" type="javax.swing.ButtonGroup" editor="org.netbeans.modules.form.RADComponent$ButtonGroupPropertyEditor">
@@ -231,6 +228,9 @@
                   <SubComponents>
                     <Component class="javax.swing.JButton" name="buttonRun">
                       <Properties>
+                        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="66" green="66" red="ff" type="rgb"/>
+                        </Property>
                         <Property name="text" type="java.lang.String" value="Run"/>
                       </Properties>
                       <Events>
@@ -238,7 +238,7 @@
                       </Events>
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-                          <AbsoluteConstraints x="40" y="40" width="-1" height="-1"/>
+                          <AbsoluteConstraints x="40" y="40" width="70" height="-1"/>
                         </Constraint>
                       </Constraints>
                     </Component>

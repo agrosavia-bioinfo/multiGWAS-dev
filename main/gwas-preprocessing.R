@@ -71,7 +71,8 @@ filterByCommonMarkersSamples <- function (genotypeFile, phenotypeFile, genotypeN
 	genoSamples   = colnames (geno[,-(1:3)])
 	phenoSamples  = pheno [,1] 
 	commonSamples = intersect (genoSamples, phenoSamples) 
-	commonMarkers = geno [,1]
+	commonMarkers = as.character(geno [,1])
+	genoNumCommon  = genoNum  [commonMarkers, ]
 
 	# Create new geno, pheno
 	genoCommon     = geno  [,c (colnames(geno)[1:3], commonSamples)]
@@ -130,8 +131,6 @@ filterByMissingMarkersAndSamples <- function (genotypeFile, callRateSNPs, callRa
 
 	noMissingGeno      = cbind (geno [markers, 1:3], geno [markers, samples])
 	noMissingGenoFile  = addLabel (genotypeFile, "noMISSING")
-	message (">>>>>>>>>>>>>>>>>>>")
-	view (noMissingGeno)
 	write.csv (noMissingGeno, noMissingGenoFile, quote=F, row.names=F)
 
 	return (noMissingGenoFile)
@@ -394,7 +393,6 @@ convertVCFToACGTByNGSEP <- function (filename, outFilename="")
 {
 	stemName = strsplit (filename, "[.]")[[1]][1]
 	cmm=sprintf ("java -jar %s/opt/tools/MultiGWAS_NGSEP.jar VCFConverter -GWASPoly -i %s -o %s", HOME, filename, stemName)
-	print (cmm)
 	runCommand (cmm, "log-NGSEP.log")
 	outFilename = paste0 (stemName, "_GWASPoly.csv") # Added by NGSEP tool
 	return (outFilename)
@@ -960,7 +958,6 @@ convertVCFToGenodiveFormat <- function (genotypeFile) {
 #----------------------------------------------------------
 ACGTToNumericGenotypeFormat <- function (genotypeFile, ploidy, MAP=F) 
 {
-	print (genotypeFile)
 	NCORES = detectCores()-1
 	geno = read.csv (file=genotypeFile, header=T, check.names=F)
 
@@ -969,12 +966,7 @@ ACGTToNumericGenotypeFormat <- function (genotypeFile, ploidy, MAP=F)
 	rownames(markers) = geno[,1]
 
 	tmp     <- apply(markers,1,getReferenceAllele)
-	view (geno)
-	view (tmp)
-	print (length( (tmp[1,])))
-	print (length( (tmp[2,])))
 	map     <- data.frame(Marker=geno[,1],Chrom=factor(geno[,2],ordered=T),Position=geno[,3], Ref=tmp[1,], Alt=tmp[2,], stringsAsFactors=F)
-	view (map)
 	write.table (map, "out/map.tbl", sep="\t")
 	map$Ref <- tmp[1,]
 	map$Alt <- tmp[2,]

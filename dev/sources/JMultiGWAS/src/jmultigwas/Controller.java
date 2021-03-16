@@ -40,7 +40,7 @@ class Controller extends JFrame {
 
     public void init() {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(800, 500);
+        this.setSize(900, 500);
 
         initViewTabs();
 

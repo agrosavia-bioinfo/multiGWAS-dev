@@ -16,12 +16,32 @@ runToolShesis <- function (params)
 	if (params$gwasModel == "naive") {
 		dataShesis = gwaspolyToShesisGenoPheno (params$genotypeFile, params$phenotypeFile, params$ploidy, params$traitType)
 	} else if (params$gwasModel == "full") {
+		message ("Running SHEsis full model...")
+		closestIndividuals   = getClosestIndividuals ("out/GWASpoly-kinship-matrix.csv")
+
+		genotype             = read.csv (file=params$genotypeFile, header=T, check.names=F)
+		phenotype            = read.csv (file=params$phenotypeFile, header=T, check.names=F)
+		genotypeKinship      = genotype [, !(colnames (genotype) %in% closestIndividuals)]
+
+		genotypeKinship      = genotype [, c(colnames (genotype)[1:3], individuals)]
+		phenotypeKinship     = phenotype [phenotype [,1] %in% individuals,]
+		genotypeFileKinship  = addLabel (params$genotypeFile,  "kinship-shesis")
+		phenotypeFileKinship = addLabel (params$phenotypeFile, "kinship-shesis")
+		write.table (file=genotypeFileKinship,  genotypeKinship,  row.names=F, quote=F, sep=",")
+		write.table (file=phenotypeFileKinship, phenotypeKinship, row.names=F, quote=F, sep=",")
+
+		dataShesis = gwaspolyToShesisGenoPheno (genotypeFileKinship, phenotypeFileKinship, params$ploidy, params$traitType)
+	
+
+	} else if (params$gwasModel == "full") {
+		message ("Running SHEsis full model...")
+		print (params)
 		# Apply kinship and filter individuals
 		#inGeno  = "out/filtered-plink-genotype"       # Uses plink file
 		inGeno   = params$plinkGenotypeFile
 
 		kinFile = paste0 (inGeno,"-kinship-shesis")
-		cmm     = sprintf ("%s/sources/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, kinFile)
+		cmm     = sprintf ("%s/main/scripts/script-kinship-plink2.sh %s %s", HOME, inGeno, kinFile)
 		runCommand (cmm, "log-kinship.log")
 
 		# Filter geno/pheno to individuals, write out, and convert to SHEsis format
@@ -38,11 +58,47 @@ runToolShesis <- function (params)
 		write.table (file=phenotypeFileKinship, phenotypeKinship, row.names=F, quote=F, sep=",")
 
 		dataShesis = gwaspolyToShesisGenoPheno (genotypeFileKinship, phenotypeFileKinship, params$ploidy, params$traitType)
+	}else {
+		message ("ERROR: GWAS model: ", params$gwasModel, " not supported")
+		quit ()
 	}
 
 	shesis  = runShesisCommand (params$traitType, dataShesis$genoPhenoFile, dataShesis$markersFile, geneAction, params)
 
 	return (list (tool="SHEsis", scoresFile=shesis$scoresFile, scores=shesis$scoresMgwas))
+}
+
+#-------------------------------------------------------------
+# Get closest relatives using kinship matrix from GWASpoly
+#-------------------------------------------------------------
+getClosestIndividuals <- function (kinshipMatrixFile) {
+	#----- Flatten kinship matrix to pairs of individuals ----
+	flattenKMat <- function(kmat) {
+	  ut <- upper.tri(kmat)t
+	  data.frame( IND1 = rownames(kmat)[row(kmat)[ut]],
+				  IND2 = rownames(kmat)[col(kmat)[ut]],
+				  K  =(kmat)[ut], stringsAsFactors=F)
+	}
+	#---------------------------------------------------------
+	if (!file.exists (kinshipMatrixFile)) 
+		kmat = createKinshipMatrix (kinshipMatrixFile)
+	else 
+		kmat = read.csv (kinshipMatrixFile, rownames=1)
+
+	kTable = flattenKMat (kma)
+	closest = kTable$IND2 [abs (kTable$K) > 0.9 ]
+	return (closest)
+}
+cl = getClosestIndividuals (kinshipMatrixFile)
+
+#-------------------------------------------------------------
+# Create kinship matrix using GWASpoly
+#-------------------------------------------------------------
+createKinshipMatrix <- function (kinshipMatrixFile, params) {
+	data1 = read.GWASpoly (ploidy = params$ploidy, pheno.file = param$phenotypeFile, 
+							geno.file = params$genotypeFile, format = "ACGT", n.traits = 1, delim=",")
+	data2 = set.K (data1)
+	kmat  = data2@K  
 }
 
 #-------------------------------------------------------------
@@ -55,7 +111,7 @@ runShesisCommand <- function (traitType, genoPhenoFile, markersFile, geneAction,
 	outFile      = paste0 (scoresFile, "-SOURCES")
 	flagQTL      = ifelse (traitType=="quantitative", "--qtl", "")
 
-	cmm=sprintf ("%s/sources/scripts/script-shesis-associations-qtl.sh %s %s %s %s %s", HOME, genoPhenoFile, params$ploidy, markersFile, outFile, flagQTL)
+	cmm=sprintf ("%s/main/scripts/script-shesis-associations-qtl.sh %s %s %s %s %s", HOME, genoPhenoFile, params$ploidy, markersFile, outFile, flagQTL)
 	runCommand (cmm, "log-SHEsis.log")	
 
 	if (traitType=="quantitative")

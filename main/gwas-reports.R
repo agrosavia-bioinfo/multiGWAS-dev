@@ -75,13 +75,13 @@ main <- function () {
 #-------------------------------------------------------------
 # Function to create different reports:
 #	1- 1 table of best SNPs
-#	2- 1 table of significative SNPs
+#	2- 1 table of significant SNPs
 #   3- 1 Venn diagram of best SNPs
-#   4- 1 Venn diagram of significative SNPs
+#   4- 1 Venn diagram of significant SNPs
 #	5- 1 multiplot of 4x4 manhattan and QQ plots
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-createReports <- function (listOfResultsFile, params) {
+createReports <- function (results, params) {
 	inputDir  = params$outputDir
 	outputDir = params$reportDir
 
@@ -89,35 +89,26 @@ createReports <- function (listOfResultsFile, params) {
 	createDir (outputDir)
 
 	# Define filenames for outputs
-	fileBestScores               = paste0 (outputDir,  "/out-multiGWAS-scoresTable-best.scores")
-	fileSignificativeScores      = paste0 (outputDir,  "/out-multiGWAS-scoresTable-significatives.scores")
-	fileBestVennDiagram          = paste0 (outputDir, "/out-multiGWAS-vennDiagram-best")
-	fileSignificativeVennDiagram = paste0 (outputDir, "/out-multiGWAS-vennDiagram-significatives")
-	fileSNpsHighLD                = paste0 (outputDir, "/out-multiGWAS-SNPsHighLD-table.csv")
+	fileBestScores        = paste0 (outputDir,  "/out-multiGWAS-scoresTable-best.scores")
+	fileSignificantScores = paste0 (outputDir,  "/out-multiGWAS-scoresTable-significants.scores")
+	fileSNpsHighLD        = paste0 (outputDir, "/out-multiGWAS-SNPsHighLD-table.csv")
 
 	msgmsg ("Writing input config parameters...")
 	config = writeConfigurationParameters (inputDir, outputDir)
 
-	if (length (listOfResultsFile)==0) {
+	if (length (results)==0) {
 		msgError ("WARNING: No result files for any tool.\n
 				  Check config file parameters (e.g. tools, geneAction, gwasModel)")
 		quit ()
 	}
 
-	snpTables = markersSummaryTable (listOfResultsFile, params$gwasModel, params$nBest, 
-									 params$geneAction, params$genotypeNumFile)
+	snpTables   = markersSummaryTableLD (results, params)
 
-	msgmsg ("Writing tables with best ranked and signficative SNPs... ")
-	write.table (file=fileBestScores, snpTables$best, row.names=F,quote=F, sep="\t")
-	write.table (file=fileSignificativeScores, snpTables$significatives, row.names=F,quote=F, sep="\t")
-
-	msgmsg ("Writing Venn diagram for best and significative SNPs...")
-	commonBest = markersVennDiagrams (listOfResultsFile, snpTables$best, params$gwasModel, "Best", fileBestVennDiagram)
-	commonSign = markersVennDiagrams (listOfResultsFile, snpTables$significatives, params$gwasModel, "Significatives",
-									  fileSignificativeVennDiagram)
+	msgmsg ("Writing Venn diagram for best and significant SNPs...")
+	commonBest = createVennDiagrams (results, snpTables, params$gwasModel, outputDir, params) 
 
 	msgmsg ("Writing Manhattan and QQ plots...")
-	createManhattanPlots (listOfResultsFile, commonBest, snpTables, params$nBest, params$geneAction, outputDir)
+	createManhattanPlots (results, commonBest, snpTables, params$nBest, params$geneAction, outputDir)
 
 	# Create heat maps
 	msgmsg ("Creating heatmaps for best ranked SNPs...")
@@ -136,6 +127,27 @@ createReports <- function (listOfResultsFile, params) {
 }
 
 #-------------------------------------------------------------
+# Create Venn diagrams for best, significatives, and LD
+#-------------------------------------------------------------
+createVennDiagrams <- function (results, snpTables, gwasModel, outputDir, params) {
+	fileVennDiagramBest  = paste0 (outputDir, "/out-multiGWAS-vennDiagram-best")
+	fileVennDiagramSign  = paste0 (outputDir, "/out-multiGWAS-vennDiagram-significants")
+	fileVennDiagramLD    = paste0 (outputDir, "/out-multiGWAS-vennDiagram-LD")
+
+
+	commonBest = markersVennDiagramsLD (results, snpTables$best, gwasModel, "Best", fileVennDiagramBest)
+	commonSign = markersVennDiagramsLD (results, snpTables$significants, gwasModel, "Significants", fileVennDiagramSign)
+	
+	# Check if there is any "scoresLDFile" in results
+	if (any (sapply (results, function (res) !is.null (res$scoresLDFile)))) {
+		snpTables   = markersSummaryTableLD (results, params, LD=T)
+		view (snpTables$best)
+		commonLD   = markersVennDiagramsLD (results, snpTables$best, gwasModel, "Best", fileVennDiagramLD, LD=T)
+	}
+
+	return (commonBest)
+}
+#-------------------------------------------------------------
 # By now, only copy table to report dir to show as knit table
 #-------------------------------------------------------------
 createSNPsHighLDOutputs <- function (SNPsHighLDFile, outputDir) {
@@ -146,6 +158,8 @@ createSNPsHighLDOutputs <- function (SNPsHighLDFile, outputDir) {
 	msgmsg (SNPsHighLDFile)
 	msgmsg (outputDir)
 	file.copy (SNPsHighLDFile, outputDir)
+
+
 }
 #-------------------------------------------------------------
 # Create manhattan plots for each tool
@@ -208,7 +222,7 @@ markersManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBe
 		signThreshold      = 10^-signThresholdScore
 
 		# 
-		ss = snpTables$significatives
+		ss = snpTables$significants
 		if (tool %in% ss$TOOL)
 			signThresholdScore = min (ss [ss$TOOL==tool,"SCORE"])
 		else
@@ -296,11 +310,69 @@ qqMGWAS <- function(gwasResults, geneAction) {
 #------------------------------------------------------------------------
 # Create Venn diagram of common markers using info from summary table
 #------------------------------------------------------------------------
+markersVennDiagramsLD <- function (results, summaryTable, gwasModel, scoresType, outFile, LD=F){
+	WIDTH  = 6; HEIGHT = 7
+
+	if (nrow (summaryTable) == 0) {
+		v0 = grid.text ("No Venn Diagram  (without significant SNPs)")
+		sharedSNPs = NULL
+	}else { 
+		# Params for figure shape and fonts
+		CEXLABELS = 0.6; CEXTITLES = 1.0
+
+		flog.threshold(ERROR)
+
+		x = list()
+		toolNames = c()
+		for (res in results) {
+			toolNames = c (toolNames, res$tool)
+			markers   = dplyr::select (filter (summaryTable, TOOL %in% res$tool), SNP) %>% .$SNP %>% as.character
+			x         = append (x, list (markers))
+		}
+		names (x) = toolNames
+		nTools = length (x)
+
+		# Create Venn diagram
+		mainTitle = paste0(gwasModel, "-", scoresType)
+		COLORS= c("red", "blue", "yellow", "green")[1:nTools]
+		v0 <- venn.diagram(x, height=1000, width=2000, alpha = 0.5, filename=NULL, col=COLORS, 
+						   cex=CEXLABELS, cat.cex=CEXTITLES, margin=0.001, fill=COLORS, euler.d=F, scaled=F)
+		overlaps   = rev (calculate.overlap(x))
+		# Check if only one tool
+		if (length (overlaps)==1) posOverlap = NA
+		else                      posOverlap = as.numeric (gsub ("a","", (names (overlaps))))
+
+		# Set items for areas, for two and one area are special cases
+		if (nTools==2) {
+			v0[[5]]$label <- paste0 ("\n", paste(setdiff(x[[1]], x[[2]]), collapse="\n"))  
+			v0[[6]]$label <- paste0 ("\n", paste(setdiff(x[[2]], x[[1]])  , collapse="\n"))  
+			v0[[7]]$label <- paste0 ("\n", paste(intersect(x[[1]], x[[2]]), collapse="\n"))  
+		}else for (i in 1:length(overlaps)){
+			pos = if (length (posOverlap)==1) 1 else  posOverlap [i] 
+			v0[[pos+2*nTools]]$label <- paste0("\n", paste(overlaps[[i]], collapse = "\n"))
+		}
+
+		# Get shared SNPs
+		dataSNPsNs     = data.frame (add_count (summaryTable, SNP, sort=T)); 
+		dataSNPsShared = dataSNPsNs[dataSNPsNs$n > 1,]
+		dataSNPsNoDups = dataSNPsShared [!duplicated (dataSNPsShared$SNP),]
+		sharedSNPs     = dataSNPsNoDups$SNP
+	}
+
+	png (paste0 (outFile,".png"), width=WIDTH, height=HEIGHT, units="in", res=120)
+	grid.draw(v0); dev.off()
+
+	pdf (paste0 (outFile,".pdf"), width=WIDTH,height=HEIGHT)
+	grid.draw(v0); dev.off()
+	
+	return (sharedSNPs)
+}
+
 markersVennDiagrams <- function (listOfResultsFile, summaryTable, gwasModel, scoresType, outFile){
 	WIDTH  = 6; HEIGHT = 7
 
 	if (nrow (summaryTable) == 0) {
-		v0 = grid.text ("No Venn Diagram  (without significative SNPs)")
+		v0 = grid.text ("No Venn Diagram  (without significant SNPs)")
 		sharedSNPs = NULL
 	}else { 
 		# Params for figure shape and fonts
@@ -311,9 +383,8 @@ markersVennDiagrams <- function (listOfResultsFile, summaryTable, gwasModel, sco
 		x = list()
 		toolNames = c()
 		for (resultsFile in listOfResultsFile) {
-			print (">>>>>>>>>>> "); print (resultsFile$tool)
 			toolNames  = c (toolNames, resultsFile$tool)
-			markers = dplyr::select (filter (summaryTable, TOOL %in% resultsFile$tool), SNP) %>% .$SNP %>% as.character
+			markers    = dplyr::select (filter (summaryTable, TOOL %in% resultsFile$tool), SNP) %>% .$SNP %>% as.character
 			x          = append (x, list (markers))
 		}
 		names (x) = toolNames
@@ -358,8 +429,60 @@ markersVennDiagrams <- function (listOfResultsFile, summaryTable, gwasModel, sco
 }
 
 #------------------------------------------------------------------------
-# Create a summary table of best and significative markers
+# Create a summary table of best and significant markers
 #------------------------------------------------------------------------
+markersSummaryTableLD <- function (results, params, LD=FALSE) {
+	gwasModel  = params$gwasModel
+	nBest      = params$nBest
+	geneAction = params$geneAction
+
+	#summaryTable = data.frame (stringsAsFactors=F)
+	summaryTable = NULL
+
+	for (res in results) {
+		TOOL       = res$tool
+		message (">>>> ", TOOL )
+		print (res$scoresLDFile)
+
+		# Select type of scoresFile
+		scoresFile = if (LD==TRUE) res$scoresLDFile else res$scoresFile 
+
+		if (!is.null (scoresFile)) {
+			data       = read.table (file=scoresFile, header=T, stringsAsFactors=F)
+			#data       = selectBestModel (data, nBest, TOOL, geneAction)
+			MODEL        = data$MODEL;
+			GC           = data$GC
+			SNP          = data$Marker
+			CHROM        = data$CHR
+			POSITION	 = data$POS
+			PVALUE	     = round (data$P, 6)
+			SCORE        = round (data$SCORE, 4)
+			THRESHOLD    = round (data$THRESHOLD, 4)
+			SIGNIFICANCE = SCORE >= THRESHOLD
+
+			dfm = data.frame (TOOL, MODEL, GC, SNP, CHROM, POSITION, PVALUE, SCORE, THRESHOLD, SIGNIFICANCE)
+			dfm = dfm [!duplicated (dfm$SNP),]
+			if (nrow(dfm)>nBest) 
+				dfm=dfm [1:nBest,] 
+
+			summaryTable <- rbind (summaryTable, dfm)
+		}
+	}
+
+	summaryBest = summaryTable [which(!is.na(summaryTable$SIGNIFICANCE)),]
+	summarySignificants = summaryBest %>% filter (SIGNIFICANCE%in%T) 
+
+	# Only write general tables not LD
+	if (LD == FALSE) {
+		msgmsg ("Writing tables with best ranked and signficative SNPs... ")
+		fileBestScores          = paste0 (params$reportDir,  "/out-multiGWAS-scoresTable-best.scores")
+		fileSignificantScores = paste0 (params$reportDir,  "/out-multiGWAS-scoresTable-significants.scores")
+		write.table (file=fileBestScores, summaryBest, row.names=F,quote=F, sep="\t")
+		write.table (file=fileSignificantScores, summarySignificants, row.names=F,quote=F, sep="\t")
+	}
+	return (list (best=summaryBest, significants=summarySignificants))
+}
+
 markersSummaryTable <- function (listOfResultsFile, gwasModel, nBest, geneAction, genotypeFile) {
 	summaryTable = data.frame (stringsAsFactors=F)
 
@@ -389,8 +512,8 @@ markersSummaryTable <- function (listOfResultsFile, gwasModel, nBest, geneAction
 	#summaryTable = matchSNPsByLDAllTools (genotypeFile, summaryTable, 0.99)
 
 	summaryTable = summaryTable [which(!is.na(summaryTable$SIGNIFICANCE)),]
-	summarySignificatives = summaryTable %>% filter (SIGNIFICANCE%in%T) 
-	return (list (best=summaryTable, significatives=summarySignificatives))
+	summarySignificants = summaryTable %>% filter (SIGNIFICANCE%in%T) 
+	return (list (best=summaryTable, significants=summarySignificants))
 }
 
 
@@ -469,7 +592,7 @@ writeConfigurationParameters <- function (inputDir, outputDir) {
 # summary table of best scores
 #-----------------------------------------------------------
 createChordDiagramSharedSNPs <- function (scoresFile) {
-	# >>>>> local function: matrix and colors 
+	# ----------- local function: matrix and colors -----------------------------------------------------------------------------------
 	createChord <- function (matrixChord=NULL, colorsChord=NULL) {
 		if (is.null (matrixChord)){
 			plot.new()
@@ -497,12 +620,13 @@ createChordDiagramSharedSNPs <- function (scoresFile) {
 				mtext ("Chromosomes", side=1, col="blue", cex=1.5)
 		}
 	} # >>>>> local function
+	#---------------------------------------------------------------------------------------------------------------------------------
 	
 	">>>>>> get shared SNPs <<<<<<>"
 	getSharedSNPsFromFile <- function (scoresFile, N) {
 		scores = read.table (file=scoresFile, header=T, sep="\t"); 
 		summary = data.frame (add_count (scores, SNP, sort=T)); 
-		sharedDups = summary [summary$n > 1,]
+		sharedDups = summary [summary$n > 1 & summary$SIGNIFICANCE==T,]
 		shared = sharedDups [!duplicated (sharedDups$SNP),]
 		return (shared)
 	}

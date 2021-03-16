@@ -68,6 +68,7 @@ runToolGwaspoly <- function (params) {
 	params = append (params, list (snpModels=snpModels))
 
 	# Read input genotype and genotype (format: "numeric", "AB", or "ACGT")
+
 	data1 <- initGWAS (params$phenotypeFile, params$genotypeFile, params$ploidy, "ACGT")
 
 	# Control population structure
@@ -112,10 +113,11 @@ controlPopulationStratification <- function (data1, gwasModel) {
 		msgmsg("    >>>> Using default Kinship and PCs=5 ")
 		kinshipMatrix = NULL
 		dataTmp       = set.K (data1)
+		write.csv (dataTmp@K,"out/GWASpoly-kinship-matrix.csv", quote=F, row.names=T)
 		data2         = new ("GWASpolyStruct", dataTmp)
 		data2@params  = set.params (n.PC=5, fixed=NULL, fixed.type=NULL)
 	}else 
-		stop ("unknown ploidy number (only 2 or 4)")
+		stop ("Unknown ploidy number (only 2 or 4)")
 
 	return (data2)
 }
