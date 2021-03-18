@@ -1,6 +1,6 @@
 Package: ldsep
 Title: Linkage Disequilibrium Shrinkage Estimation for Polyploids
-Version: 2.0.1
+Version: 2.0.2
 Authors@R: 
     person(given = "David",
            family = "Gerard",
@@ -30,9 +30,9 @@ Suggests: testthat, covr, knitr, rmarkdown, updog (>= 2.0.2),
 Depends: R (>= 2.10)
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2021-02-12 14:20:13 UTC; dgerard
+Packaged: 2021-02-15 13:58:31 UTC; dgerard
 Author: David Gerard [aut, cre] (<https://orcid.org/0000-0001-9450-5023>)
 Maintainer: David Gerard <gerard.1787@gmail.com>
 Repository: CRAN
-Date/Publication: 2021-02-12 15:30:02 UTC
-Built: R 3.6.3; x86_64-pc-linux-gnu; 2021-02-16 02:49:38 UTC; unix
+Date/Publication: 2021-02-17 09:00:15 UTC
+Built: R 3.6.3; x86_64-pc-linux-gnu; 2021-03-16 22:02:24 UTC; unix

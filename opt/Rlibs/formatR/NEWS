@@ -1,3 +1,11 @@
+		   CHANGES IN formatR VERSION 1.8
+
+MAJOR CHANGES
+
+  o White spaces on blank lines are removed now (thanks, @nylander, #88).
+
+  o This package requires R >= 3.2.3 now.
+
 		   CHANGES IN formatR VERSION 1.7
 
 MAJOR CHANGES
@@ -103,7 +111,7 @@ MAJOR CHANGES
   similarly, the corresponding global options were also renamed: now you should
   use `options(formatR.comment)` instead of `options(keep.comment)`,
   `keep.blank.line` -> `formatR.blank`, and so on; see `?tidy_source` and
-  http://yihui.name/formatR for details
+  http://yihui.org/formatR for details
 
 MINOR CHANGES
 

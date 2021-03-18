@@ -24,7 +24,7 @@
 
 #ifndef ARMA_CRIPPLED_LAPACK
 // value on next line may be changed between #undef and #define by the configure script
-#define ARMA_CRIPPLED_LAPACK 1
+#undef ARMA_CRIPPLED_LAPACK
 #endif
 
 #ifndef ARMA_USE_OPENMP

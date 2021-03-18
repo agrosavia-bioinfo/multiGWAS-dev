@@ -101,6 +101,9 @@ main <- function () {
 	if (length (args) < 1) 
 		stop (usageInstructions())
 
+	# Check dependencies
+	checkDependencies (params)
+
 	# Process config file and run multiGWAS
 	msg ("Processing config file...")
 	initGlobalEnvironment ()
@@ -120,6 +123,17 @@ main <- function () {
 	}
 }
 
+#-------------------------------------------------------------
+# Check dependencies before running GWAS tools
+#-------------------------------------------------------------
+checkDependencies <- function (params) {
+		# Check if JAVA is installed
+		if (Sys.which ("java")=="") {
+				message ("ERROR: Java not found. Java is needed to run TASSEL and GUI interface.")
+				quit ()
+		}
+
+}
 #-------------------------------------------------------------
 # Define global variables, load packages, and load main
 #-------------------------------------------------------------
@@ -385,6 +399,7 @@ runLinkageDisequilibriumAnalysis <- function (listOfResultsFile, nBest, genotype
 	for (res in listOfResultsFile) {
 		msgmsg ("LD in ", res$tool)
 		scoresLD = res$scores
+		view (scoresLD);quit()
 		rownames (scoresLD) = scoresLD$Marker
 		scoresLD$Marker     = as.character (scoresLD$Marker)
 		for (k in 1:nrow (ldTable)) {

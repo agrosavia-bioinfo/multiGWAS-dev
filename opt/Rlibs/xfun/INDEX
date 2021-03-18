@@ -62,9 +62,10 @@ raw_string              Print a character vector in its raw form
 read_bin                Read all records of a binary file as a raw
                         vector by default
 read_utf8               Read / write files encoded in UTF-8
-relative_path           Get the relative path of a path relative a
+relative_path           Get the relative path of a path relative to a
                         directory
 rename_seq              Rename files with a sequential numeric prefix
+retry                   Retry calling a function for a number of times
 rev_check               Run 'R CMD check' on the reverse dependencies
                         of a package
 rstudio_type            Type a character vector into the RStudio source

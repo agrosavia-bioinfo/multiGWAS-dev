@@ -4,8 +4,12 @@ knitr::opts_chunk$set(tidy = TRUE)
 
 ## ----eval=FALSE-----------------------------------------------------
 #  install.packages('formatR', repos = 'http://cran.rstudio.com')
-#  #' to install the development version, run
-#  #' install.packages('formatR', repos = 'https://xran.yihui.name')
+#  # or development version
+#  options(repos = c(
+#    yihui = 'https://yihui.r-universe.dev',
+#    CRAN = 'https://cloud.r-project.org'
+#  ))
+#  install.packages('formatR')
 
 ## -------------------------------------------------------------------
 library(formatR)

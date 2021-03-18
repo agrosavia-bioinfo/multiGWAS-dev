@@ -214,10 +214,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>timing</span></code></pre></div>
 <div class="sourceCode">
 <pre class="sourceCode"><code class="sourceCode">#&gt; # A tibble: 2 x 14
-#&gt;   expression min         mean         median      max         `itr/sec`
-#&gt;   &lt;chr&gt;      &lt;bench_tm&gt;  &lt;bench_tm&gt;   &lt;bench_tm&gt;  &lt;bench_tm&gt;      &lt;dbl&gt;
-#&gt; 1 as_tibble… 0.000287696 0.0006251376 0.000327178 0.004508219     1600.
-#&gt; 2 as.data.f… 0.000791522 0.0016640039 0.001098172 0.007652914      601.
+#&gt;   expression       min         mean         median      max         `itr/sec`
+#&gt;   &lt;chr&gt;            &lt;bench_tm&gt;  &lt;bench_tm&gt;   &lt;bench_tm&gt;  &lt;bench_tm&gt;      &lt;dbl&gt;
+#&gt; 1 as_tibble(l)     0.000287696 0.0006251376 0.000327178 0.004508219     1600.
+#&gt; 2 as.data.frame(l) 0.000791522 0.0016640039 0.001098172 0.007652914      601.
 #&gt; # … with 8 more variables: mem_alloc &lt;bnch_byt&gt;, n_gc &lt;dbl&gt;, n_itr &lt;int&gt;,
 #&gt; #   total_time &lt;bench_tm&gt;, result &lt;list&gt;, memory &lt;list&gt;, time &lt;list&gt;, gc &lt;list&gt;
 </code></pre>
@@ -302,8 +302,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>df2 <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">abc =</span> <span class="dv">1</span>)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>df2<span class="sc">$</span>a</span></code></pre></div>
 <div class="sourceCode">
-<pre class="sourceCode"><code class="sourceCode">#&gt; Warning: Unknown or uninitialised column: `a`.
-</code></pre>
+<pre class="sourceCode"><code class="sourceCode"><span style="color: #BB0000;">#&gt; Warning: Unknown or uninitialised column: `a`.
+</span></code></pre>
 </div>
 <div class="sourceCode">
 <pre class="sourceCode"><code class="sourceCode">#&gt; NULL
@@ -346,11 +346,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </div>
 <div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">c =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>)</span></code></pre></div>
 <div class="sourceCode">
-<pre class="sourceCode"><code class="sourceCode">#&gt; Error: Tibble columns must have compatible sizes.
+<pre class="sourceCode"><code class="sourceCode"><span style="color: #BB0000;">#&gt; Error: Tibble columns must have compatible sizes.
 #&gt; * Size 3: Existing data.
 #&gt; * Size 2: Column `c`.
-#&gt; ℹ Only values of size one are recycled.
-</code></pre>
+#&gt; </span><span style="color: #0000BB;">ℹ</span><span style="color: #BB0000;"> Only values of size one are recycled.
+</span></code></pre>
 </div>
 <div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">a =</span> <span class="dv">1</span>, <span class="at">b =</span> <span class="fu">integer</span>())</span></code></pre></div>
 <div class="sourceCode">

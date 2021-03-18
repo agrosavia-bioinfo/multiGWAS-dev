@@ -19,8 +19,8 @@ options(
 if (!exists("eval_details")) eval_details <- FALSE
 
 ## ----setup--------------------------------------------------------------------
-library(vctrs)
 library(tibble)
+suppressWarnings(library(vctrs))
 
 new_df <- function() {
   df <- data.frame(n = c(1L, NA, 3L, NA))

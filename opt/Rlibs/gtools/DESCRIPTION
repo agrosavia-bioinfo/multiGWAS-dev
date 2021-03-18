@@ -36,4 +36,4 @@ NeedsCompilation: yes
 Packaged: 2020-03-29 23:27:01 UTC; gwarnes
 Repository: CRAN
 Date/Publication: 2020-03-31 13:50:02 UTC
-Built: R 3.6.3; x86_64-pc-linux-gnu; 2021-02-16 02:41:22 UTC; unix
+Built: R 3.6.3; x86_64-pc-linux-gnu; 2021-03-16 21:52:25 UTC; unix

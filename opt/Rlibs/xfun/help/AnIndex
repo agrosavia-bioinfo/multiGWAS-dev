@@ -73,6 +73,7 @@ read_bin	read_bin
 read_utf8	read_utf8
 relative_path	relative_path
 rename_seq	rename_seq
+retry	retry
 rev_check	rev_check
 root_rules	proj_root
 Rscript	Rscript
@@ -82,6 +83,7 @@ same_path	same_path
 sans_ext	file_ext
 session_info	session_info
 set_envvar	set_envvar
+sort_file	process_file
 split_lines	split_lines
 split_source	split_source
 strict_list	strict_list

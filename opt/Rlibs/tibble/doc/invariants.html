@@ -153,16 +153,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="conventions" class="section level2">
 <h2>Conventions</h2>
 <p>In this article, all behaviors are demonstrated using one example data frame and its tibble equivalent:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vctrs)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: &#39;vctrs&#39;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following object is masked from &#39;package:dplyr&#39;:</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     data_frame</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following object is masked from &#39;package:tibble&#39;:</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     data_frame</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressWarnings</span>(<span class="fu">library</span>(vctrs))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: &#39;vctrs&#39;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following object is masked from &#39;package:dplyr&#39;:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     data_frame</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following object is masked from &#39;package:tibble&#39;:</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     data_frame</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>new_df <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">n =</span> <span class="fu">c</span>(1L, <span class="cn">NA</span>, 3L, <span class="cn">NA</span>))</span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  df<span class="sc">$</span>c <span class="ot">&lt;-</span> letters[<span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>]</span>
@@ -307,9 +307,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>tbl[[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]]</span></code></pre></div>
 <div class="warning">
-<pre><code>#&gt; Warning: The `j` argument of
-#&gt; ``[[.tbl_df`()` can&#39;t be a vector of
-#&gt; length 2 as of tibble 3.0.0.
+<pre><code>#&gt; Warning: The `j` argument of `[[.tbl_df`
+#&gt; can&#39;t be a vector of length 2 as of
+#&gt; tibble 3.0.0.
 #&gt; Recursive subsetting is deprecated for
 #&gt; tibbles.</code></pre>
 </div>
@@ -842,9 +842,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>
 <div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>tbl[<span class="dv">10</span>, ]</span></code></pre></div>
 <div class="warning">
-<pre><code>#&gt; Warning: The `i` argument of
-#&gt; ``[.tbl_df`()` must lie in [0, rows] if
-#&gt; positive, as of tibble 3.0.0.
+<pre><code>#&gt; Warning: The `i` argument of `[.tbl_df`
+#&gt; must lie in [0, rows] if positive, as of
+#&gt; tibble 3.0.0.
 #&gt; Use `NA_integer_` as row index to obtain
 #&gt; a row full of `NA` values.</code></pre>
 </div>
@@ -863,9 +863,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>
 <div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>tbl[<span class="st">&quot;x&quot;</span>, ]</span></code></pre></div>
 <div class="warning">
-<pre><code>#&gt; Warning: The `i` argument of
-#&gt; ``[.tbl_df`()` must use valid row names
-#&gt; as of tibble 3.0.0.
+<pre><code>#&gt; Warning: The `i` argument of `[.tbl_df`
+#&gt; must use valid row names as of tibble
+#&gt; 3.0.0.
 #&gt; Use `NA_integer_` as row index to obtain
 #&gt; a row full of `NA` values.</code></pre>
 </div>
@@ -1018,12 +1018,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>
 <div class="sourceCode" id="cb103"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with_tbl2</span>(tbl2[[<span class="st">&quot;tb&quot;</span>]] <span class="ot">&lt;-</span> tbl[<span class="dv">1</span>, ])</span>
 <span id="cb103-2"><a href="#cb103-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 x 2</span></span>
-<span id="cb103-3"><a href="#cb103-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    tb$n $c    $li   m[,1]  [,2]  [,3]</span></span>
-<span id="cb103-4"><a href="#cb103-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;lis&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span id="cb103-5"><a href="#cb103-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     1 e     &lt;dbl…     1     0     0</span></span>
-<span id="cb103-6"><a href="#cb103-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2     1 e     &lt;dbl…     0     1     0</span></span>
-<span id="cb103-7"><a href="#cb103-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     1 e     &lt;dbl…     0     0     1</span></span>
-<span id="cb103-8"><a href="#cb103-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4     1 e     &lt;dbl…     0     0     0</span></span></code></pre></div>
+<span id="cb103-3"><a href="#cb103-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    tb$n $c    $li      m[,1]  [,2]  [,3]</span></span>
+<span id="cb103-4"><a href="#cb103-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;list&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb103-5"><a href="#cb103-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     1 e     &lt;dbl [1…     1     0     0</span></span>
+<span id="cb103-6"><a href="#cb103-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2     1 e     &lt;dbl [1…     0     1     0</span></span>
+<span id="cb103-7"><a href="#cb103-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     1 e     &lt;dbl [1…     0     0     1</span></span>
+<span id="cb103-8"><a href="#cb103-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4     1 e     &lt;dbl [1…     0     0     0</span></span></code></pre></div>
 </td>
 </tr>
 <tr style="vertical-align:top">
@@ -1038,12 +1038,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>
 <div class="sourceCode" id="cb106"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with_tbl2</span>(tbl2[[<span class="st">&quot;m&quot;</span>]] <span class="ot">&lt;-</span> tbl2[[<span class="st">&quot;m&quot;</span>]][<span class="dv">1</span>, , <span class="at">drop =</span> <span class="cn">FALSE</span>])</span>
 <span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 x 2</span></span>
-<span id="cb106-3"><a href="#cb106-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    tb$n $c    $li   m[,1]  [,2]  [,3]</span></span>
-<span id="cb106-4"><a href="#cb106-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;lis&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span id="cb106-5"><a href="#cb106-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     1 e     &lt;dbl…     1     0     0</span></span>
-<span id="cb106-6"><a href="#cb106-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2    NA f     &lt;int…     1     0     0</span></span>
-<span id="cb106-7"><a href="#cb106-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     3 g     &lt;int…     1     0     0</span></span>
-<span id="cb106-8"><a href="#cb106-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    NA h     &lt;chr…     1     0     0</span></span></code></pre></div>
+<span id="cb106-3"><a href="#cb106-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    tb$n $c    $li      m[,1]  [,2]  [,3]</span></span>
+<span id="cb106-4"><a href="#cb106-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;list&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb106-5"><a href="#cb106-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     1 e     &lt;dbl [1…     1     0     0</span></span>
+<span id="cb106-6"><a href="#cb106-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2    NA f     &lt;int [2…     1     0     0</span></span>
+<span id="cb106-7"><a href="#cb106-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     3 g     &lt;int [3…     1     0     0</span></span>
+<span id="cb106-8"><a href="#cb106-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    NA h     &lt;chr [1…     1     0     0</span></span></code></pre></div>
 </td>
 </tr>
 </tbody>
@@ -2106,12 +2106,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>
 <div class="sourceCode" id="cb226"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb226-1"><a href="#cb226-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with_tbl2</span>(tbl2[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> tbl[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="dv">1</span>])</span>
 <span id="cb226-2"><a href="#cb226-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 x 2</span></span>
-<span id="cb226-3"><a href="#cb226-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    tb$n $c    $li   m[,1]  [,2]  [,3]</span></span>
-<span id="cb226-4"><a href="#cb226-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;lis&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span id="cb226-5"><a href="#cb226-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     1 e     &lt;dbl…     1     0     0</span></span>
-<span id="cb226-6"><a href="#cb226-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2    NA f     &lt;int…     1     1     1</span></span>
-<span id="cb226-7"><a href="#cb226-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     3 g     &lt;int…    NA    NA    NA</span></span>
-<span id="cb226-8"><a href="#cb226-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    NA h     &lt;chr…     0     0     0</span></span></code></pre></div>
+<span id="cb226-3"><a href="#cb226-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    tb$n $c    $li      m[,1]  [,2]  [,3]</span></span>
+<span id="cb226-4"><a href="#cb226-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt; &lt;list&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb226-5"><a href="#cb226-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1     1 e     &lt;dbl [1…     1     0     0</span></span>
+<span id="cb226-6"><a href="#cb226-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2    NA f     &lt;int [2…     1     1     1</span></span>
+<span id="cb226-7"><a href="#cb226-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     3 g     &lt;int [3…    NA    NA    NA</span></span>
+<span id="cb226-8"><a href="#cb226-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    NA h     &lt;chr [1…     0     0     0</span></span></code></pre></div>
 </td>
 </tr>
 </tbody>

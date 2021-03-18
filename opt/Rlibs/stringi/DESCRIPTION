@@ -31,4 +31,4 @@ NeedsCompilation: yes
 Packaged: 2020-09-04 06:13:18 UTC; gagolews
 Repository: CRAN
 Date/Publication: 2020-09-09 06:40:03 UTC
-Built: R 3.6.3; x86_64-pc-linux-gnu; 2021-02-16 02:40:00 UTC; unix
+Built: R 3.6.3; x86_64-pc-linux-gnu; 2021-03-16 21:50:32 UTC; unix
