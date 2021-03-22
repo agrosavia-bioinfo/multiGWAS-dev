@@ -85,7 +85,7 @@ mainSingleTrait <- function (traitParamsFile) {
 
 	# Move out files to output dir
 	msg ("Moving files to output folders...")
-	moveOutFiles (params$outputDir, params$reportDir)
+	moveOutFiles (params$outputDir, params$reportDir, params)
 }
 
 #-------------------------------------------------------------
@@ -255,27 +255,27 @@ readCheckConfigParameters <- function (paramsFile) {
 	if (params$ploidy %notin% c("2", "4"))   stop ("MG Error: Ploidy not supported")
 
 	# Create output dir, check input files, and copy files to output dir
-	outDir   = paste0 ("out-", strsplit (paramsFile, split="[.]") [[1]][1])
-	createDir (outDir)
+	runningDir   = paste0 ("out-", strsplit (paramsFile, split="[.]") [[1]][1])
+	createDir (runningDir)
 	if (!file.exists (params$genotypeFile)) 
 		stop (sprintf ("MG Error: Genotype file not found: '%s'", params$genotypeFile), call.=T)
-	runCommand(sprintf ("cp %s %s", params$genotypeFile, outDir))
+	runCommand(sprintf ("cp %s %s", params$genotypeFile, runningDir))
 	params$genotypeFile  = basename (params$genotypeFile)
 
 	if (!file.exists (params$phenotypeFile)) 
 		stop (sprintf ("MG Error: Phenotype file not found: '%s'", params$phenotypeFile), call.=T)
-	runCommand(sprintf ("cp %s %s", params$phenotypeFile, outDir))
+	runCommand(sprintf ("cp %s %s", params$phenotypeFile, runningDir))
 	params$phenotypeFile = basename (params$phenotypeFile)
 
 	if (tolower (params$genotypeFormat) %in% c("kmatrix", "fitpoly", "updog")) {
 		if (is.null (params$mapFile) | !file.exists (params$mapFile))      
 			stop ("MG Error: Map file not found or not specified in the config file", call.=T)
-		file.copy (params$mapFile, outDir)
+		file.copy (params$mapFile, runningDir)
 		params$mapFile = basename (params$mapFile)
 	}
 	# Change to the output dir and set global OUTDIR 
-	setwd (outDir)
-	#OUTDIR <<- paste0 (getwd(), "/", outDir)
+	setwd (runningDir)
+	params$runningPath = getwd()
 	
 	# Create params files for each trait
 	phenotype = read.csv (params$phenotypeFile, check.names=F)
@@ -297,8 +297,6 @@ readCheckConfigParameters <- function (paramsFile) {
 		msgmsg (sprintf ("%-18s : %s", names (params[i]), 
 			if (is.null (params [i][[1]])) "NULL" else params [i][[1]]    ))
 	msgmsg ("-----------------------------------------------------------")
-
-
 
 	return (params)
 }
@@ -334,8 +332,11 @@ selectBestGeneActionModelTool <- function (scoresTool, nBest, tool, geneAction) 
 		return (bestScoresTool)
 	}
 
-	if (geneAction %in% c("additive", "dominant", "general") | tool %in% c("SHEsis"))
-		return (dataSNPs)
+	if (geneAction %in% c("all", "additive", "dominant", "general") | tool %in% c("SHEsis")){
+		bestScoresTool = distinct (arrange (dataSNPs, -DIFF), Marker, .keep_all=T)
+		return (bestScoresTool)
+}
+		#return (dataSNPs)
 
 
 	# Order by nBest, DIFF, GC
@@ -399,7 +400,7 @@ runLinkageDisequilibriumAnalysis <- function (listOfResultsFile, nBest, genotype
 	for (res in listOfResultsFile) {
 		msgmsg ("LD in ", res$tool)
 		scoresLD = res$scores
-		view (scoresLD);quit()
+		view (scoresLD)
 		rownames (scoresLD) = scoresLD$Marker
 		scoresLD$Marker     = as.character (scoresLD$Marker)
 		for (k in 1:nrow (ldTable)) {
@@ -472,8 +473,9 @@ createLinkageDisequilibriumTable <- function (listOfResultsFile, nBest, genotype
 #-------------------------------------------------------------
 # Move output files to specific directories
 #-------------------------------------------------------------
-moveOutFiles <- function (outputDir, reportDir) 
+moveOutFiles <- function (outputDir, reportDir, params) 
 {
+	system (sprintf ("mv %s/%s/multiGWAS-report.html %s/%s-report.html", params$runningPath, params$trait, params$runningPath, params$trait))
 	system (sprintf ("cp %s/tool*csv %s &> /dev/null", outputDir, reportDir))
 	system (sprintf ("mv %s/out*pdf %s > /dev/null 2>&1", outputDir, reportDir))
 	system ("mkdir logs")
