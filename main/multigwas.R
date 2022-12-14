@@ -1,43 +1,228 @@
 #!/usr/bin/Rscript
 DEBUG = F; SILENT=T
-message ("DEBUG = ", DEBUG, "\n")
 
 options (width=300, error=traceback)
-if (DEBUG) {SILENT <- FALSE;options (warn=2)}
+if (DEBUG) {
+	SILENT <- FALSE;options (warn=2)
+	message ("Running in debug mode...")
+}
 
-# Get enviornment GWAS variable 
+# Get environment GWAS variable 
 HOME   <<- Sys.getenv ("MULTIGWAS_HOME")
 OUTDIR <- getwd()
 params <- list ()
+LOGS   <- list ()
 
 # INFO  : Tool for running GWAS integratind four GWAS tools: 
 #         GWASpoly and SHEsis for polyploids species, and Plink and Tassel for diploids.
 # AUTHOR: Luis Garreta (lgarreta@agrosavia.co) 
 # DATE  : 12/feb/2020
 # LOGS  :   
-	# r1.8: Add linkage disequilibrium analysis
-	# r1.5: Using VCF files
-	# r1.3: Added column gene action model to tables of results by tool
+	# r1.5: Added cacheDir. Modified ACGTToNumber. Modified report LD. 
+	# r1.3: Improved check input files. Added try catch for running gwas tools.
+	# r1.1: Added create summary table with scored SNPs. Deleted config and pheno files
+	# r1.0: Added genotype formats, LD, and HWE
+	# r0.8: Add linkage disequilibrium analysis
+	# r0.5: Using VCF files
+	# r0.3: Added column gene action model to tables of results by tool
 
 #-------------------------------------------------------------
 # Return string with usage instructions
 #-------------------------------------------------------------
 usageInstructions <- function () {
-	USAGE="USAGE: multiGWAS <config file>"
+	USAGE="USAGE: multigwas <config file>\n"
 	return (USAGE)
 }
 
 #-------------------------------------------------------------
+# Main for multi traits
+#-------------------------------------------------------------
+main <- function () {
+	message ("MultiGWAS 1.5 is running!\n")
+	args = commandArgs(trailingOnly = TRUE)
+	if (length (args) < 1) {
+		message (usageInstructions())
+		quit ()
+	}
+
+	# Check dependencies and init environments
+	checkDependencies (params)
+	initGlobalsLoadSources ()
+
+	# Read and check config file arguments
+	configFile = args [1]
+	params <<- readCheckConfigParameters (configFile)
+	params <<- initWorkingCacheDir (configFile)
+
+	printParameters (params)
+
+	# Preprocess input files, convert to tools format, and create config files for traits
+	params <<- convertGenoPhenoToMultigwas (params$cacheDir) 
+  	data = filterGenoPhenoMapFiles (params$genotypeFile, params$phenotypeFile, params$cacheDir)
+	params <<- convertGenotypeToToolFormats (data$genotypeFile, params$cacheDir)
+
+	# Analyze each trait independiently
+	mainDir        = getwd ()
+	bestSNPsList   = list()
+	allSNPsList    = list()
+	allGScoreList  = list()
+	allPhenotypes  = read.csv (data$phenotypeFile, row.names=1)
+	traitNames     = colnames (allPhenotypes)
+	sampleNames    = row.names (allPhenotypes)
+	for (traitName in traitNames) {
+		createDir (traitName)
+		setwd (traitName)
+
+		phenotype            = cbind (sampleNames, allPhenotypes [,traitName])
+		colnames (phenotype) = c ("NAMES", traitName)
+		traitConfigFile      = createConfigFileForTrait (phenotype, traitName)
+
+		resultsTables       = mainSingleTrait (traitConfigFile)
+
+		bestSNPsList  = append (bestSNPsList, list (resultsTables$best))
+		allSNPsList   = append (allSNPsList, list (resultsTables$all))
+		allGScoreList = append (allGScoreList, list (resultsTables$gscore))
+		write.csv (resultsTables$gscore, sprintf ("%s/%s-Scores.csv", mainDir, traitName))
+		setwd (mainDir)
+	}
+	bestSNPsTable   = do.call ("rbind", bestSNPsList)
+	allSNPsTable    = do.call ("rbind", allSNPsList)
+	allGScoreTable  = do.call ("rbind", allGScoreList)
+
+	createGlobalReport (configFile, bestSNPsTable, allSNPsTable, allGScoreTable) 
+	printLOGS ("")
+}
+
+#-------------------------------------------------------------
+# Create output working dir and copy input files into it
+#-------------------------------------------------------------
+initWorkingCacheDir <- function (configFile) {
+	msg ("Initializing working dir...")
+	runningDir   = paste0 ("out-", strsplit (configFile, split="[.]") [[1]][1])
+	createDir (runningDir)
+
+	copyFilesToRunningDir (params, runningDir)
+
+	# Change to the output dir and set global runningDir 
+	baseDir = getwd()
+	setwd (runningDir)
+
+	msgmsg ("Initializing cache dir...")
+	if (DEBUG) {
+		cacheDir = sprintf ("%s/%s", baseDir, "cacheDir")
+		if (dir.exists (cacheDir)==FALSE)
+			createDir (cacheDir)
+	}else {
+		cacheDir = sprintf ("%s/%s", getwd(), "cacheDir")
+		createDir (cacheDir)
+	}
+
+	params$cacheDir    = cacheDir
+	params$runningPath = getwd()
+	return (params)
+}
+
+#----------------------------------------------------------
+# Copy input files to running dir
+# Remove path and copy files to trait directory (runningDir)
+#----------------------------------------------------------
+copyFilesToRunningDir <- function (params, runningDir) {
+	runCommand(sprintf ("cp %s %s", params$genotypeFile, runningDir))
+	params$genotypeFile  = basename (params$genotypeFile)
+
+	runCommand(sprintf ("cp %s %s", params$phenotypeFile, runningDir))
+	params$phenotypeFile = basename (params$phenotypeFile)
+
+	if (tolower (params$genotypeFormat) %in% c("matrix", "fitpoly", "updog")) {
+		file.copy (params$mapFile, runningDir)
+		params$mapFile = basename (params$mapFile)
+	}
+}
+
+#-------------------------------------------------------------
+# Write global tables for all and best markers for all traits
+#-------------------------------------------------------------
+createGlobalReport <- function (configFile, bestSNPsTable, allSNPsTable, allGScoreTable){
+	msg ("Writing global report: table with all and best markers for all traits...")
+	outFile = "SCORES-BEST.csv"
+	write.csv (bestSNPsTable, outFile, row.names=F)
+	
+	#outFile = "ALL-SCORES-ALL.csv"
+	#write.csv (allSNPsTable, outFile, row.names=F)
+
+	outFile = "SCORES-ALL.csv"
+	write.csv (allGScoreTable, outFile, row.names=F)
+}
+
+#-------------------------------------------------------------
+# Main for a single trait
+#-------------------------------------------------------------
+mainSingleTrait <- function (traitConfigFile) {
+	msg ("Processing parameters file: ", traitConfigFile)
+
+	# Copy files to working dirs and create output dirs
+	paramsTrait   		 = getTraitConfig (traitConfigFile)
+	params.phenotypeFile = paramsTrait$phenotypeFile
+
+	# Run the four tools in parallel
+	listOfResults = runGWASTools (paramsTrait)
+
+	# Create reports
+	msg ("Creating reports (Table, Venn diagrams, Manhattan&QQ plots, SNP profiles)...")
+	resultsTables  = createReports (listOfResults, paramsTrait)
+	snpTables.best = data.frame (TRAIT=paramsTrait$trait, resultsTables$best)
+	allScores      = data.frame (TRAIT=paramsTrait$trait, resultsTables$all)
+	allGScores     = data.frame (TRAIT=paramsTrait$trait, resultsTables$gscore)
+
+	# Move out files to output dir
+	msg ("Sending trait files to output folders...")
+	moveOutFiles (paramsTrait$outputDir, paramsTrait$reportDir, traitConfigFile, params.phenotypeFile, paramsTrait)
+
+	return (list (best=snpTables.best, all=allScores, gscore=allGScores))
+}
+
+#-------------------------------------------------------------
+# Print logs manually writen during the process
+#-------------------------------------------------------------
+printLOGS <- function (e) {
+	message ("#------------------------------------------------------------")
+	message ("#------------------- WARNINGS SUMARY ------------------------")
+	message ("#------------------------------------------------------------")
+	for (l in LOGS) 
+		message (l)
+	message ("#----------------- END OF EXECUTION -------------------------")
+	message ("#--------------- Moving files to output dirs -------------------------")
+	sink (sprintf("%s/%s", OUTDIR, "gwas.errors"))
+	print (e)
+	sink()
+}
+#-------------------------------------------------------------
+#-------------------------------------------------------------
 # Used to run in parallel the other functions
 #-------------------------------------------------------------
-runGWASTools <- function () {
+runGWASTools <- function (params) {
+	results = NULL
 	runOneTool <- function (tool, params) {
-		if      (tool=="gwaspoly") runToolGwaspoly (params)
-		else if (tool=="shesis")   runToolShesis (params)
-		else if (tool=="gapit")    runToolGapit (params)
-		else if (tool=="tassel")   runToolTassel (params)
-		else if (tool=="plink")    runToolPlink (params)
-		else                       stop ("Tool not supported")
+		tryCatch ({
+			if (tool=="gwaspoly") 
+				results = runToolGwaspoly (params)
+			else if (tool=="shesis")   
+				results = runToolShesis (params)
+			else if (tool=="gapit") 
+				results = runToolGapit (params) 
+			else if (tool=="tassel")   
+				results = runToolTassel (params)
+			else if (tool=="plink")    
+				results = runToolPlink (params)
+			else                       
+				stop ("Tool not supported")
+			return (results)
+		},error = function (e){
+			text =  "WARNING: One of the four tools without results."
+			message (text)
+			LOGS <<- append (LOGS, text)
+			return (NULL)
+		})
 	}
 
 	# A string containing the names of the tools to run (e.g. "GWASpoly SHEsis PLINK TASSEL")
@@ -46,81 +231,38 @@ runGWASTools <- function () {
 	for (tool in tools) 
 		msgmsg ("Running ", tool)
 
-	#listOfResultsFile     = mclapply (tools, runOneTool, params, mc.cores=NCORES, mc.silent=SILENT)
-	listOfResultsFile     = mclapply (tools, runOneTool, params, mc.cores=NCORES, mc.silent=FALSE)
-	listOfResultsFileBest = selectBestGeneActionModelAllTools (listOfResultsFile, params$geneAction, params$nBest)
-	listOfResultsFileLD   = runLinkageDisequilibriumAnalysis (listOfResultsFileBest, params$nBest, params$genotypeNumFile, params$R2)
+	listOfResults     = mclapply (tools, runOneTool, params, mc.cores=NCORES, mc.silent=F)
+	# Remove NULLs if they were running tool
+	listOfResults     = listOfResults [lengths (listOfResults) != 0]
+	listOfResultsBest = selectBestGeneActionModelAllTools (listOfResults, params$geneAction, params$nBest)
+	listOfResultsLD   = runLinkageDisequilibriumAnalysis (listOfResultsBest, params$nBest, params$genotypeNumFile, params$R2)
 
-	return (listOfResultsFileLD)
-}
-
-
-#-------------------------------------------------------------
-# Main for a single trait
-#-------------------------------------------------------------
-mainSingleTrait <- function (traitParamsFile) {
-	# Copy files to working dirs and create output dirs
-	params   <<- getTraitConfig (traitParamsFile)
-
-	# Read, filter, and check phenotype and genotype
-	msg ("Preprocessing genomic data (Filtering and Formating data)...")
-
-	data <- genoPhenoMapProcessing (params$genotypeFile, params$genotypeFormat,
-									params$phenotypeFile, params$mapFile)
-	params$trait           <<- data$trait
-	params$genotypeNumFile <<- data$genotypeNumFile
-	params$nBest           <<- as.integer (params$nBest)
-
-	msg ("Converting genotype/phenotype to tools formats...")
-	data = convertGenotypeToToolFormats (data$genotypeFile, data$phenotypeFile)
-	params$genotypeFile    <<- data$genotypeFile
-	params$phenotypeFile   <<- data$phenotypeFile
-
-	# Run the four tools in parallel
-	listOfResultsFile = runGWASTools ()
-
-	# Create reports
-	msg ("Creating reports (Table, Venn diagrams, Manhattan&QQ plots, SNP profiles)...")
-	createReports (listOfResultsFile, params)
-
-	# Move out files to output dir
-	msg ("Moving files to output folders...")
-	moveOutFiles (params$outputDir, params$reportDir, params)
+	#return (listOfResultsBest)
+	return (listOfResultsLD)
 }
 
 #-------------------------------------------------------------
-# Main for multi traits
+# Create configuration files for individual traits in multitrait file
 #-------------------------------------------------------------
-main <- function () {
-	source (paste0 (HOME, "/main/gwas-lib.R"))             # Module with shesis functions
+createConfigFileForTrait <- function (phenotype, traitName) {
+	msg ("Creating configuration files for trait: ", traitName)
 
-	msg ("MultiGWAS 1.0")
-	msg ("Working dir: ", getwd())
-	args = commandArgs(trailingOnly = TRUE)
+	phenoTraitFile = paste0 (traitName,".csv")
+	write.csv (phenotype, phenoTraitFile, row.names=F)
 
-	if (length (args) < 1) 
-		stop (usageInstructions())
+	params = convertPhenotypeToToolFormats (phenoTraitFile)
 
-	# Check dependencies
-	checkDependencies (params)
+	# Create config file for trait
+	params$phenotypeFile = phenoTraitFile
+	params$trait         = traitName
+	params$outputDir     = traitName
+	configLines = c()
+	for (n in names (params))
+		configLines = c (configLines, paste0 (n, " : ", params[n]))
 
-	# Process config file and run multiGWAS
-	msg ("Processing config file...")
-	initGlobalEnvironment ()
-
-	configFile = args [1]
-	if (file.exists (configFile)==F) 
-		stop ("Configuration file not found")
-
-	# Read and check config file arguments
-	msg ("Reading configuration file...")
-	params     = readCheckConfigParameters (configFile)
-
-	mainDir = getwd ()
-	for (traitParamsFile in params$traitConfigList) {
-		setwd (mainDir)
-		mainSingleTrait (traitParamsFile)
-	}
+	traitConfigFile  = paste0 (traitName, ".config")
+	writeLines (configLines, traitConfigFile)
+	return (traitConfigFile)
 }
 
 #-------------------------------------------------------------
@@ -132,14 +274,13 @@ checkDependencies <- function (params) {
 				message ("ERROR: Java not found. Java is needed to run TASSEL and GUI interface.")
 				quit ()
 		}
-
 }
 #-------------------------------------------------------------
 # Define global variables, load packages, and load main
 #-------------------------------------------------------------
-initGlobalEnvironment <- function () 
-{
-	message (">>>> Loading libraries and setting globals...")
+initGlobalsLoadSources <- function () {
+	source (paste0 (HOME, "/main/gwas-lib.R")) 
+	msg ("Loading libraries, setting globals, sourcing files...")
 
 	.libPaths (paste0(HOME, "/opt/Rlibs"))
 
@@ -154,11 +295,12 @@ initGlobalEnvironment <- function ()
 	setClass ("GWASpolyStruct", slots=c(params="list"), contains="GWASpoly.K")
 
 	# Load main
+	source (paste0 (HOME, "/main/gwas-parameters.R"))      # Module for checking configuration parameters
 	source (paste0 (HOME, "/main/gwas-preprocessing.R"))      # Module with functions to convert between different genotype formats 
 	source (paste0 (HOME, "/main/gwas-reports.R"))            # Module with functions to create summaries: tables and venn diagrams
 	source (paste0 (HOME, "/main/gwas-heatmap.R"))            # Module with functions to create heatmaps for shared SNPs
 	source (paste0 (HOME, "/main/gwas-gwaspoly.R"))           # Module with gwaspoly functions
-	source (paste0 (HOME, "/main/gwas-plink.R"))              # Module with plink functions
+	#source (paste0 (HOME, "/main/gwas-plink.R"))              # Module with plink functions
 	source (paste0 (HOME, "/main/gwas-tassel.R"))             # Module with tassel functions
 	source (paste0 (HOME, "/main/gwas-shesis.R"))             # Module with shesis functions
 	source (paste0 (HOME, "/main/gwas-gapit.R"))             # Module with shesis functions
@@ -166,139 +308,33 @@ initGlobalEnvironment <- function ()
 }
 
 #-------------------------------------------------------------
-# Create individual phenotype files from a multitrait phenotype file
-#-------------------------------------------------------------
-createTraitConfigFiles <- function (phenotype, traitName, configFile, params) 
-{
-	# Create phenotype file for trait
-	phenotypeTrait     = phenotype [, c(colnames(phenotype)[1], traitName)]
-	phenotypeTraitPath = paste0 (traitName,".csv")
-	write.csv (phenotypeTrait, phenotypeTraitPath, quote=F, row.names=F)
-
-	# Create config file for trait
-	params$phenotypeFile = basename (phenotypeTraitPath)
-	configLines = c()
-	for (n in names (params))
-		configLines = c (configLines, paste0 (n, " : ", params[n]))
-
-	configLines      = c (configLines, paste0 ("outputDir : ", traitName))
-	traitParamsFile  = paste0 (traitName, ".config")
-	writeLines (configLines, traitParamsFile)
-
-	return (traitParamsFile)
-}
-
-
-#-------------------------------------------------------------
 # Read configuration parameters and set working directories
 #   - Create dir, if it exists, it is renamed as old-XXXX
 #   - Copy and make links of geno/pheno to output dirs
 #-------------------------------------------------------------
 getTraitConfig <- function (traitParamsFile) {
-	msg ("Processing params file: ", traitParamsFile)
-	#params     = config::get (file=traitParamsFile, config="advanced") 
-	params     = yaml.load_file (traitParamsFile, merge.precedence="order") 
-	traitDir   = params$outputDir
-	params$traitDir = traitDir
-	outDir     = paste0 (traitDir, "/out")
-
+	paramsTrait = yaml.load_file (traitParamsFile, merge.precedence="order") 
+	traitDir    = paramsTrait$outputDir
+	#outDir      = paste0 (traitDir, "/out")
+	outDir      = "out"
 
 	# Copy files two times to both trait and out dir
-	outDirs    = c(traitDir, outDir)
+	outDirs    = c(outDir)
 	for (dir in outDirs) {
 		createDir (dir)
 		file.copy (traitParamsFile, dir)
-		file.copy (params$genotypeFile, dir )
-		file.copy (params$phenotypeFile, dir)
-		if (params$genotypeFormat %in% c("kmatrix", "fitpoly", "updog"))
-			runCommand (sprintf ("cp %s %s", params$mapFile, dir))
+		#file.copy (paramsTrait$genotypeFile, dir )
+		file.symlink (sprintf ("../%s", paramsTrait$genotypeFile), dir)
+		file.copy (paramsTrait$phenotypeFile, dir)
+		if (paramsTrait$genotypeFormat %in% c("matrix", "fitpoly", "updog"))
+			runCommand (sprintf ("cp %s %s", paramsTrait$mapFile, dir))
 	}
-	# Change to the working dir and set dirs in params
-	setwd (traitDir)
-	params$outputDir <- "out/"
-	params$reportDir <- "report/"
+	# Change to the working dir and set dirs in paramsTrait
+	paramsTrait$outputDir = "out/"
+	paramsTrait$reportDir = "report/"
+	paramsTrait$traitDir  = traitDir
 
-	return (params)
-}
-
-#-------------------------------------------------------------
-# Get params from config file and define models according to ploidy
-#-------------------------------------------------------------
-readCheckConfigParameters <- function (paramsFile) {
-	params = tryCatch (yaml.load_file (paramsFile), 
-					   error=function (cond){
-						   stop ("Some errors in configuration file. Check for valid or repeated names!!!")
-					   })
-
-	params$paramsFilename = paramsFile
-
-	# Set default values if not set
-	if (is.null (params$geneAction)) params$geneAction = "additive"
-	if (is.null (params$traitType)) params$traitType = "quantitative"
-	if (is.null (params$R2)) params$R2 = 1
-
-	# Change to lower case text parameters
-	params$genotypeFormat   = tolower (params$genotypeFormat) 
-	params$gwasModel        = tolower (params$gwasModel) 
-	params$filtering        = ifelse (tolower (params$filtering)=="true", T, F) 
-	params$tools            = tolower (params$tools) 
-	params$geneAction       = tolower (params$geneAction) 
-
-	params$correctionMethod   = tolower (params$correctionMethod) 
-	if (params$correctionMethod == "bonferroni") params$correctionMethod = "Bonferroni"
-	else if (params$correctionMethod == "fdr")   params$correctionMethod = "FDR"
-	else stop (paste0 ("MG Error: Unknown correction method: ", params$correctionMethod), call.=T)
-
-	`%notin%` <- Negate(`%in%`)
-
-	# Check possible errors in ploidy 
-	if (params$ploidy %notin% c("2", "4"))   stop ("MG Error: Ploidy not supported")
-
-	# Create output dir, check input files, and copy files to output dir
-	runningDir   = paste0 ("out-", strsplit (paramsFile, split="[.]") [[1]][1])
-	createDir (runningDir)
-	if (!file.exists (params$genotypeFile)) 
-		stop (sprintf ("MG Error: Genotype file not found: '%s'", params$genotypeFile), call.=T)
-	runCommand(sprintf ("cp %s %s", params$genotypeFile, runningDir))
-	params$genotypeFile  = basename (params$genotypeFile)
-
-	if (!file.exists (params$phenotypeFile)) 
-		stop (sprintf ("MG Error: Phenotype file not found: '%s'", params$phenotypeFile), call.=T)
-	runCommand(sprintf ("cp %s %s", params$phenotypeFile, runningDir))
-	params$phenotypeFile = basename (params$phenotypeFile)
-
-	if (tolower (params$genotypeFormat) %in% c("kmatrix", "fitpoly", "updog")) {
-		if (is.null (params$mapFile) | !file.exists (params$mapFile))      
-			stop ("MG Error: Map file not found or not specified in the config file", call.=T)
-		file.copy (params$mapFile, runningDir)
-		params$mapFile = basename (params$mapFile)
-	}
-	# Change to the output dir and set global OUTDIR 
-	setwd (runningDir)
-	params$runningPath = getwd()
-	
-	# Create params files for each trait
-	phenotype = read.csv (params$phenotypeFile, check.names=F)
-	traitList = colnames (phenotype)[-1]
-	traitConfigList = c()
-	for (traitName in traitList) {
-		params$trait = traitName
-		traitConfig     = createTraitConfigFiles (phenotype, traitName, paramsFile, params)
-		traitConfigList = c (traitConfigList, traitConfig)
-	}
-
-	params$traitConfigList = traitConfigList 
-
-	# Print params file
-	msgmsg ("-----------------------------------------------------------")
-	msgmsg ("Summary of configuration parameters:")
-	msgmsg ("-----------------------------------------------------------")
-	for (i in 1:length (params)) 
-		msgmsg (sprintf ("%-18s : %s", names (params[i]), 
-			if (is.null (params [i][[1]])) "NULL" else params [i][[1]]    ))
-	msgmsg ("-----------------------------------------------------------")
-
-	return (params)
+	return (paramsTrait)
 }
 
 #-----------------------------------------------------------
@@ -306,19 +342,19 @@ readCheckConfigParameters <- function (paramsFile) {
 # Uses three criteria: best GC, best replicability, and best significants
 # PLINK also can produce info of more action models using options
 #-----------------------------------------------------------
-selectBestGeneActionModelAllTools <- function (listOfResultsFile, geneAction, nBest) {
+selectBestGeneActionModelAllTools <- function (listOfResults, geneAction, nBest) {
 	msg ("Selecting best gene action model for all tools...")
 	i = 1
-	for (res in listOfResultsFile) {
+	for (res in listOfResults) {
 		msgmsg ("Best gene action for: ", res$tool)
-		scoresFileBest   = addLabel (res$scoresFile, "BEST")
 		bestScoresTool   = selectBestGeneActionModelTool (res$scores, nBest, res$tool, geneAction)
+		scoresFileBest   = addLabel (res$scoresFile, "BEST")
 		write.table (bestScoresTool, scoresFileBest, sep="\t", quote=F, row.names=F)
-		listOfResultsFile [[i]]$scoresFile = scoresFileBest
-		listOfResultsFile [[i]]$scores     = bestScoresTool
+		listOfResults [[i]]$scoresFile = scoresFileBest
+		listOfResults [[i]]$scores     = bestScoresTool
 		i = i + 1
 	}
-	return (listOfResultsFile)
+	return (listOfResults)
 }
 
 
@@ -332,12 +368,11 @@ selectBestGeneActionModelTool <- function (scoresTool, nBest, tool, geneAction) 
 		return (bestScoresTool)
 	}
 
-	if (geneAction %in% c("all", "additive", "dominant", "general") | tool %in% c("SHEsis")){
+	if (geneAction %in% c("all", "additive", "dominant", "general") || tool %in% c("SHEsis")){
 		bestScoresTool = distinct (arrange (dataSNPs, -DIFF), Marker, .keep_all=T)
 		return (bestScoresTool)
-}
+	}
 		#return (dataSNPs)
-
 
 	# Order by nBest, DIFF, GC
 	orderedSNPs = dataSNPs [order (dataSNPs$MODEL,-dataSNPs$DIFF),]; 
@@ -390,17 +425,16 @@ selectBestGeneActionModelTool <- function (scoresTool, nBest, tool, geneAction) 
 # Calculates LD for each Tool's SNP and rename pairs of SNPs
 # added the new file to the listOfResults
 #-----------------------------------------------------------------------
-runLinkageDisequilibriumAnalysis <- function (listOfResultsFile, nBest, genotypeNumFile, R2) {
+runLinkageDisequilibriumAnalysis <- function (listOfResults, nBest, genotypeNumFile, R2) {
 	msg ("Linkage disequilibrium analysis...")
-	ldTable = createLinkageDisequilibriumTable (listOfResultsFile, nBest, genotypeNumFile, R2) 
+	ldTable = createLinkageDisequilibriumTable (listOfResults, nBest, genotypeNumFile, R2) 
 	if (is.null (ldTable))
-		return (listOfResultsFile)
+		return (listOfResults)
 
 	i = 1
-	for (res in listOfResultsFile) {
+	for (res in listOfResults) {
 		msgmsg ("LD in ", res$tool)
 		scoresLD = res$scores
-		view (scoresLD)
 		rownames (scoresLD) = scoresLD$Marker
 		scoresLD$Marker     = as.character (scoresLD$Marker)
 		for (k in 1:nrow (ldTable)) {
@@ -417,26 +451,30 @@ runLinkageDisequilibriumAnalysis <- function (listOfResultsFile, nBest, genotype
 		if (nrow (scoresLD) > 0) {
 				scoresLDFile = addLabel (res$scoresFile, "LD")
 				write.table (scoresLD, scoresLDFile, sep="\t", quote=F, row.names=F)
-				view (listOfResultsFile [[i]]$scores)
-				listOfResultsFile [[i]]["scoresLDFile"] = scoresLDFile
+				listOfResults [[i]]["scoresLDFile"] = scoresLDFile
 		}
 		i = i+1
 	}
-	return (listOfResultsFile)
+	return (listOfResults)
 }
 
 #-------------------------------------------------------
 # Create a table for SNPs in all tools in high LD
 #-------------------------------------------------------
-createLinkageDisequilibriumTable <- function (listOfResultsFile, nBest, genotypeNumFile, R2) {
+createLinkageDisequilibriumTable <- function (listOfResults, nBest, genotypeNumFile, R2) {
 	# Join all SNPs in one vector
 	allSNPs = NULL
-	for (res in listOfResultsFile) {
-		toolSNPs = res$scores$Marker [1:nBest] 
+	for (res in listOfResults) {
+		msgmsg ("Joining results from tool: ", res$tool)
+		markers = res$scores$Marker
+		N = length (markers)
+		if (N >= nBest) N=nBest
+		toolSNPs = markers [1:N] 
 		allSNPs  = union (allSNPs, toolSNPs)
 	}
 
 	# Run linkage disequilibrium
+	msgmsg ("Running linkage disequilibrium...")
 	genotypeNum = read.csv (genotypeNumFile, row.names=1);
 	genomat     = as.matrix (genotypeNum [,-1:-2]); 
 	genomatSNPs = genomat [allSNPs,]; 
@@ -445,6 +483,7 @@ createLinkageDisequilibriumTable <- function (listOfResultsFile, nBest, genotype
 	ldMatrix    = ldMatrixAll [,c(3,4,7)]
 
 	# Create a table with LD SNPs
+	msgmsg ("Create a table with LD SNPs...")
 	i=1;k=1
 	snpsLDTable = NULL
 	while (i <= nrow (ldMatrix)) {
@@ -473,8 +512,7 @@ createLinkageDisequilibriumTable <- function (listOfResultsFile, nBest, genotype
 #-------------------------------------------------------------
 # Move output files to specific directories
 #-------------------------------------------------------------
-moveOutFiles <- function (outputDir, reportDir, params) 
-{
+moveOutFiles <- function (outputDir, reportDir, traitConfigFile, phenotypeFile, params) {
 	system (sprintf ("mv %s/%s/multiGWAS-report.html %s/%s-report.html", params$runningPath, params$trait, params$runningPath, params$trait))
 	system (sprintf ("cp %s/tool*csv %s &> /dev/null", outputDir, reportDir))
 	system (sprintf ("mv %s/out*pdf %s > /dev/null 2>&1", outputDir, reportDir))
@@ -484,98 +522,194 @@ moveOutFiles <- function (outputDir, reportDir, params)
 	system ("mv *PCs* logs > /dev/null 2>&1", ignore.stdout=T, ignore.stderr=T)
 	system ("mv ../*log* logs > /dev/null 2>&1", ignore.stdout=T, ignore.stderr=T)
 	system ("mv ../*errors* logs > /dev/null 2>&1", ignore.stdout=T, ignore.stderr=T)
+	system ("mv out-mapping* report/ > /dev/null 2>&1", ignore.stdout=T, ignore.stderr=T)
+
+	system (sprintf ("rm ../%s > /dev/null 2>&1", phenotypeFile))
+	system (sprintf ("rm ../%s > /dev/null 2>&1", traitConfigFile))
+	#system ("rm -rf out & > /dev/null 2>&1")
+
 }
 
 #-------------------------------------------------------------
+# First convert genotype to GwasPoly format
 # Filters the genotype by different quality control filters
 # Read and check files, sample samples
-# Convert geno an pheno to other tool formats 
 #-------------------------------------------------------------
-genoPhenoMapProcessing <- function (genotypeFile, genotypeFormat, phenotypeFile, mapFile) {
-	# Convert to gwaspoly format from other formats: VCF, GWASpoly, k-matrix, or fitPoly.
-	newData       = convertGenotypeToGWASpolyFormat (genotypeFile, phenotypeFile, mapFile, genotypeFormat, params$ploidy, outDir="out/")
-	genotypeFile  = newData$geno
-	phenotypeFile = newData$pheno
-	mapFile       = newData$map
+filterGenoPhenoMapFiles <- function (genotypeFile, phenotypeFile, cacheDir) {
+	# If non-model organisms sort and select the number of chromosomes to show
+	genoFileNonModel = filterByNonModelOrganisms (genotypeFile, params)
 
 	# Filter by valid markers (alleles lenght, call rate SNPs and Samples)
-	msgmsg ("Checking valid markers...")
-	validGenotypeFile = filterByValidMarkers (genotypeFile, params$ploidy)
-
-	# Remove no polymorohic markers (MAF > 0.0) and Write chromosome info (map.tbl)
-	msgmsg ("Filtering no polymorohic markers (MAF > THRESHOLD) ...") 
-	maf             = filterByMAF (validGenotypeFile, params, 0.0)
-	#maf             = filterByMAF (validGenotypeFile, params, params$thresholdMAF)
-	genotypeFile    = maf$genotypeFile
-	genotypeNumFile = maf$genotypeNumFile
+	genoFileValid = filterByValidMarkers (genoFileNonModel, params$ploidy, cacheDir)
 
 	if (params$filtering==FALSE) {
 		msg ("Without filters")
+		genoFileFiltered = genoFileValid
 	}else {
 		msg ("Using filters...")
-		msgmsg ("Filtering by missing markers and samples...")
-		genotypeFile  = filterByMissingMarkersAndSamples (genotypeFile, params$GENO, params$MIND) 
+		genoFileFiltered  = filterByMissingMarkersAndSamples (genoFileValid, params$GENO, params$MIND) 
 	}
 
 	# Filter by common markers, samples and remove duplicated and NA phenos
-	msgmsg ("Filtering by common markers and samples...")
-	common          = filterByCommonMarkersSamples (genotypeFile, phenotypeFile, genotypeNumFile)
-	genotypeFile    = common$genotypeFile
-	genotypeNumFile = common$genotypeNumFile
-	#genotypeNumFile = ACGTToNumericGenotypeFormat (genotypeFile, params$ploidy)
-	phenotypeFile   = common$phenotypeFile
-	trait           = common$trait
+	common = filterByCommonMarkersSamples (genoFileFiltered, phenotypeFile)
+	trait  = common$trait
+
+	# Remove no polymorohic markers (MAF > 0.0) and Write chromosome info (map.tbl)
+	msgmsg ("Filtering no polymorohic markers (MAF > THRESHOLD) ...") 
+	maf    = filterByMAF (common$genotypeFile, params, params$thresholdMAF, cacheDir)
 
 	# Print info trait, N samples
 	msgmsg("Evaluating following trait: ", trait) 
-	nSamples = ncol (common$genotype)
-	msgmsg ("N =",nSamples,"individuals with phenotypic and genotypic information \n")
 
-	return (list (genotypeFile=genotypeFile, phenotypeFile=phenotypeFile, trait=common$trait, genotypeNumFile=genotypeNumFile))
+	# Add new parameters to params
+	params$genotypeFile    <<- maf$genotypeFile
+	params$genotypeNumFile <<- maf$genotypeNumFile
+	params$phenotypeFile   <<- common$phenotypeFile
+	params$mapFile         <<- common$mapFile
+	params$trait           <<- trait
+
+	return (list (genotypeFile=params$genotypeFile, phenotypeFile=params$phenotypeFile, 
+				  mapFile=params$mapFile, trait=params$trait, genotypeNumFile=params$genotypeNumFile))
 }
 
 #-------------------------------------------------------------
-# Convert genotype to tool formats
+# For non-model organisms:
+# Sort by chromosome lenght and select N first chromosomes 
 #-------------------------------------------------------------
-convertGenotypeToToolFormats <- function (genotypeFile, phenotypeFile) {
+filterByNonModelOrganisms <- function (genotypeFile, params) {
+	if (params$nonModelOrganism == FALSE) 
+		return (genotypeFile)
+
+	# Genotype is for non-model organism
+	# Function for get chromosome limites
+
+	limits <- function (x) {
+		start = head (x,n=1)
+		end   = tail (x,n=1)
+		return (end-start+1)
+	}
+
+	data         = read.csv (genotypeFile, check.names=F)
+	data         = arrange (data, Chrom, Position)
+	grouped      = group_by (data, Chrom)
+	sortedChroms = grouped %>% summarize(SIZE=limits(Position)) %>% arrange (-SIZE)
+	nLarger      = head (sortedChroms, n=params$numberOfChromosomes)
+	selected     = data %>% filter (Chrom %in% nLarger$Chrom)
+	dataSorted   = selected %>% arrange (match(Chrom, nLarger$Chrom)) 
+
+	## Change chromosome names
+	nLarger = as.data.frame (nLarger)
+	chrs    = as.character (nLarger$Chrom)
+	dfContigs = NULL
+	for (i in 1:length (chrs)) {
+		contigName = paste0 ("contig",i)
+		dataSorted$Chrom [dataSorted$Chrom %in% chrs[i]] = contigName
+		dfContigs = rbind (dfContigs, data.frame (CHROMOSOME= chrs[i], CONTIG=contigName))
+	}
+
+	write.csv (dfContigs, "out-mapping-chromosome-names-table.csv", quote=F, row.names=F)
+
+	nonModelFile = addLabel (genotypeFile,"NonMODEL")
+	write.csv (dataSorted, nonModelFile, quote=F, row.names=F)
+	return (nonModelFile)
+}
+
+#-------------------------------------------------------------
+# Convert genotype to tool formats, and add to params
+#-------------------------------------------------------------
+convertPhenotypeToToolFormats <- function (phenotypeFile) {
 	# Create PLINK geno/pheno (For SHEsis and TASSEL)
-	if (grepl("plink", params$tool) | grepl("tassel",params$tools)) {
-		msgmsg ("Converting phenotype to PLINK format (.ped, .map, .bim, .fam, .bed)...")
+	if (grepl("plink", params$tool) || grepl("tassel",params$tools)) {
+		msgmsg ("Converting phenotype to PLINK format...")
 		plinkPhenotype = gwaspolyToPlinkPhenotype  (phenotypeFile) 
-		plinkGenotype  = gwaspolyToPlinkGenotype (genotypeFile)
-		params$plinkPhenotypeFile <<- plinkPhenotype
-		params$plinkGenotypeFile <<- plinkGenotype
+		params$plinkPhenotypeFile =  plinkPhenotype
 	}
 
 	if (grepl("tassel", params$tool)) {
 		msgmsg ("Converting phenotype to TASSEL format (.vcf)...")
 		tasselPhenotype = gwaspolyToTasselPhenotype (phenotypeFile) 
-		tasselGenotype  = plinkToVCFFormat (plinkGenotype)
-		params$tasselPhenotypeFile <<- tasselPhenotype
-		params$tasselGenotypeFile <<- tasselGenotype
+		params$tasselPhenotypeFile =  tasselPhenotype
 	}
 
 	if (grepl("gapit", params$tool)) {
 		msgmsg ("Converting geno/pheno to GAPIT format (.vcf)...")
-		gapit = gwaspolyToGapitFormat (genotypeFile, phenotypeFile, params$geneAction, FILES=T)
-		params$gapitGenotypeFile  <<- gapit$geno
-		params$gapitPhenotypeFile <<- gapit$pheno
-		params$gapitMapFile       <<- gapit$map
+		gapitPhenotype = gwaspolyToGapitPhenotype (phenotypeFile)
+		params$gapitPhenotypeFile =  gapitPhenotype
 	}
-
-	return (list (genotypeFile=genotypeFile, phenotypeFile=phenotypeFile))
+	return (params)
 }
 
+#-------------------------------------------------------------
+# Returns filename from cache if it exists, otherwise returns NULL
+#-------------------------------------------------------------
+getFileFromCache <- function (filename, cacheDir) {
+	cacheFile = sprintf ("%s/%s", cacheDir, basename (filename))
+	if (file.exists (cacheFile)) {
+		msgmsg ("Loading file from cache: ", cacheFile)
+		return (cacheFile)
+	}
+	return ("")
+}
+#-------------------------------------------------------------
+# Convert genotype to tool formats, and add to params
+#-------------------------------------------------------------
+convertGenotypeToToolFormats <- function (genotypeFile, cacheDir) {
+	msg ("Converting genotype to tools format...")
+	# Create PLINK geno/pheno (For SHEsis and TASSEL)
+	if (grepl("plink", params$tool) || grepl("tassel",params$tools)) {
+		plinkGenotype = gsub (".csv", "-PLINK", genotypeFile)
+		pedFile       = paste0 (plinkGenotype, ".ped")
+		if (getFileFromCache (pedFile, cacheDir) == "") {
+			msgmsg ("Converting genotype to PLINK format...")
+			plinkGenotype = gwaspolyToPlinkGenotype (genotypeFile)
+		}
+
+		#if (file.exists (paste0(plinkGenotype, ".ped"))==FALSE) {
+		#	msgmsg ("Converting genotype to PLINK format...")
+		#	plinkGenotype = gwaspolyToPlinkGenotype (genotypeFile)
+		#}
+		params$plinkGenotypeFile <<- plinkGenotype
+	}
+
+	if (grepl("tassel", params$tool)) {
+		tasselGenotype = gsub (".csv", "-TASSEL.vcf", genotypeFile)
+		if (file.exists (tasselGenotype)==FALSE){
+			msgmsg ("Converting genotype to TASSEL format (.vcf)...")
+			tasselGenotype  = plinkToVCFFormat (plinkGenotype)
+		}
+		params$tasselGenotypeFile <<- tasselGenotype
+	}
+
+	if (grepl("gapit", params$tool)) {
+		msgmsg ("Converting genotype to GAPIT format...")
+		gapit = gwaspolyToGapitGenotype (genotypeFile, params$geneAction, FILES=T, cacheDir)
+		params$gapitGenotypeFile  <<- gapit$geno
+		params$gapitMapFile       <<- gapit$map
+	}
+	return (params)
+}
 
 #-------------------------------------------------------------
 # Check valid markers: 
 #   alleles length==ploidy, proportion of NAs in marker and samples (call rate),
 #   chromosomes names as number, and sorted by chromosome and position
 #-------------------------------------------------------------
-filterByValidMarkers <- function (genotypeFile, ploidy) 
-{
+filterByValidMarkers <- function (genotypeFile, ploidy, cacheDir) {
+	msgmsg ("Checking valid markers...")
+	validGenoFile = addLabel (genotypeFile, "VALIDSNPs")
+	if (DEBUG) {
+		msgmsg ("Loading valid geno file from cache...")
+		genoCache = sprintf ("%s/%s", cacheDir, basename (validGenoFile))
+		if (file.exists (genoCache))
+			return (genoCache)
+		else
+			validGenoFile = genoCache
+	}
+	msgmsg ("Calculating valid markers...")
+
 	geno                  = read.csv (file=genotypeFile, check.names=F)
 	allelesGeno           = as.matrix(geno[,-(1:3)])
+	allelesNames          = colnames (allelesGeno)
 	map                   = geno [,1:3]
 
 	sampleNames           = colnames (geno[,-(1:3)])
@@ -583,69 +717,101 @@ filterByValidMarkers <- function (genotypeFile, ploidy)
 	rownames(allelesGeno) = geno [,1]
 
 	#--------------------------------------------
-	# Check and convert chromosome text names to numbers using factos
+	# Check and convert chromosome text names to numbers using factors
 	#--------------------------------------------
-	anyNonNumericChrom <- function (chrs) {
-		suppressWarnings (any (is.na (as.numeric (chrs))))
-	}
+	##anyNonNumericChrom <- function (chrs) {
+	##	suppressWarnings (any (is.na (as.numeric (chrs))))
+	##}
  
-	chrs = as.character (map [,2])
-	if  (anyNonNumericChrom (chrs)==TRUE) {
-		msgmsg ("!!!Mapping chromosome names to numbers (see 'out-mapped-chromosome-names.csv') file...")
-		chrs            = as.factor (chrs)
-		levels (chrs)   = 1:length (levels (chrs))
-		write.csv (data.frame (ORIGINAL_CHROM=map[,2], NEW_CHROM=chrs), "out-mapped-chromosome-names.csv", quote=F, row.names=F)
-		map [,2] = chrs
-	}
+	##chrs = as.character (map [,2])
+	##if  (anyNonNumericChrom (chrs)==TRUE) {
+	##	msgmsg ("!!!Mapping chromosome names to numbers (see 'out-mapped-chromosome-names.csv') file...")
+	##	chrs            = as.factor (chrs)
+	##	levels (chrs)   = 1:length (levels (chrs))
+	##	write.csv (data.frame (ORIGINAL_CHROM=map[,2], NEW_CHROM=chrs), "out-mapped-chromosome-names.csv", quote=F, row.names=F)
+	##	map [,2] = chrs
+	##}
 	#--------------------------------------------
 
 	#--------------------------------------------
 	# Set NAs to alleles with length < ploidy
 	#--------------------------------------------
 	setNAs <- function (alleles, ploidy) {
-		if (is.na (alleles) | nchar (alleles) < ploidy)
+		if (is.na (alleles) || nchar (alleles) < ploidy)
 			return (NA)
 		return (alleles)
 	}
 	allelesList   = unlist (mclapply (allelesGeno,  setNAs, ploidy, mc.cores=NCORES))
+	if (sum (is.na(allelesList)) > length (allelesList)/2) {
+		message ("-------------------------------------------------------------------------------------------")
+		message ("ERROR: Most alleles are not ploidy ", ploidy, ". Check the ploidy number in the config file!") 
+		message ("------------------------------------------------------------------------------------------")
+		quit ()
+	}
+		
 	allelesMat    = matrix (allelesList, nrow=nrow(allelesGeno), ncol=ncol(allelesGeno))
-	colnames (allelesMat) = colnames (allelesGeno)
+
+	# Remove NA columns 
+	NACols        = which (colSums(!is.na (allelesMat))==0) 
+	if (length (NACols)>0) {
+		allelesMat   = allelesMat [,-NACols] 
+		allelesNames = allelesNames [-NACols]
+	}
+	colnames (allelesMat) = allelesNames
+
+	# Remove NA rows
+	NARows        = which (rowSums(!is.na (allelesMat))==0) 
+	if (length (NARows)>0) {
+		allelesMat = allelesMat [-NARows,] 
+		map        = map [-NARows,]
+	}
+
 	validGeno     = cbind (map, allelesMat)
-	validGenoFile = addLabel (genotypeFile, "VALIDSNPs")
 	write.csv (validGeno, validGenoFile, quote=F, row.names=F)
 	#--------------------------------------------
 
 	return (validGenoFile)
 }
 #-------------------------------------------------------------
-# Return the format type of genotype
+# Convert input genotype to multigwas format (gwaspoly format)
 # Checks if VCF, GWASpoly(k-matrix-chrom-pos), k-matrix, and fitPoly
+# Phenotype is assume in table format
 #-------------------------------------------------------------
-convertGenotypeToGWASpolyFormat <- function (genotypeFile, phenotypeFile, mapFile, type, ploidy, outDir) {
-	msg ("Converting genotype format in ", type, " to ", "GWASpoly format...")
-
-	if (type=="gwaspoly"){#Don't do anything, same genotype
-		genotypeFile = genotypeFile
-	}else if (type=="kmatrix") {# Only for tetraploids
-		genotypeFile = createGwaspolyGenotype (genotypeFile, mapFile)
-	}else if (type=="vcf") {
-		genotypeFile = convertVCFToACGTByNGSEP (genotypeFile) #output: filename.csv
-	}else if (type=="fitpoly"){
-		genotypeFile = convertFitpolyToGwaspolyGenotype (genotypeFile, mapFile) #output: filename.csv
-	}else if (type=="updog"){
-		genotypeFile = convertUpdogToGwaspolyGenotype (genotypeFile, mapFile) #output: filename.csv
+convertGenoPhenoToMultigwas <- function (cacheDir) {
+	genoFile = sprintf ("%s/%s", cacheDir, "genotype.csv")
+	if (file.exists (genoFile)){
+		msg ("Loading genotype from cache...")
+		newGenotypeFile = genoFile
 	}else {
-		msgmsg ("Error: Unknown genotype file format")
-		return (NULL)
+		type = params$genotypeFormat
+		msg ("Converting genotype format in ", type , " to ", "GWASpoly format...")
+
+		if (type=="gwaspoly"){#Don't do anything, same genotype
+			newGenotypeFile = params$genotypeFile
+		}else if (type=="matrix") {# Only for tetraploids
+			newGenotypeFile = createGwaspolyGenotype (params$genotypeFile, params$mapFile)
+		}else if (type=="vcf") {
+			newGenotypeFile = convertVCFToACGTByNGSEP (params$genotypeFile) #output: filename.csv
+		}else if (type=="fitpoly"){
+			newGenotypeFile = convertFitpolyToGwaspolyGenotype (params$genotypeFile, params$mapFile) #output: filename.csv
+		}else if (type=="updog"){
+			newGenotypeFile = convertUpdogToGwaspolyGenotype (params$genotypeFile, params$mapFile) #output: filename.csv
+		}else {
+			message ("--------------------------------------------")
+			message ("ERROR: Unknown genotype file format: ", type)
+			message ("--------------------------------------------")
+			quit ()
+		}
 	}
+	# Copy converted geno/pheno to base names into cacheDir
+	newGenoFile  = sprintf ("%s/%s", cacheDir, "genotype.csv")
+	newPhenoFile = sprintf ("%s/%s", cacheDir, "phenotype.csv")
+	file.copy (newGenotypeFile,  newGenoFile)
+	file.copy (params$phenotypeFile, newPhenoFile)
+	params$genotypeFile  = newGenoFile
+	params$phenotypeFile = newPhenoFile
 
-	newGenotypeFile  = paste0 (outDir, "genotype.csv")
-	newPhenotypeFile = paste0 (outDir, "phenotype.csv")
-
-	file.copy (genotypeFile, newGenotypeFile)
-	file.copy (phenotypeFile, newPhenotypeFile)
-
-	return (list (geno=newGenotypeFile, pheno=newPhenotypeFile, map=mapFile))
+	return (params)
 }
 
 #-------------------------------------------------------------
@@ -717,7 +883,7 @@ impute.mode <- function(x) {
 # Impute, filter by MAF, unify geno and pheno names
 # Only for "ACGT" format (For other formats see GWASpoly main)
 #-------------------------------------------------------------
-filterByMAF <- function(genotypeFile, params, thresholdMAF) {
+filterByMAF <- function(genotypeFile, params, thresholdMAF, cacheDir) {
 	ploidy = params$ploidy
 
 	if (is.null (thresholdMAF)) {
@@ -727,13 +893,16 @@ filterByMAF <- function(genotypeFile, params, thresholdMAF) {
 			thresholdMAF = 0.0
 	}
 
-	outNum       = ACGTToNumericGenotypeFormat (genotypeFile, ploidy, MAP=T)
-	geno         = outNum$geno
-	numericGeno  = outNum$genoNum
-	map          = outNum$map
+	outNum   = ACGTToNumericGenotypeFormat (genotypeFile, ploidy, cacheDir)
+	geno     = outNum$geno
+	genoNum  = outNum$genoNum
+	genoMap  = outNum$map
+	nMarkers = nrow (geno)
+	nSamples = ncol (geno[,-1:-3])
 
 	# Get only genotypes without mapping
-	numericMatrixM = t(numericGeno[,-c(1:3)])
+	numericMatrixM = t(genoNum[,-1])
+	colnames (numericMatrixM) = genoNum [,1]
 
 	# Check LG Global MAF (AF?)
 	msgmsg ("Checking minor allele frecuency, MAF=", thresholdMAF)
@@ -742,15 +911,16 @@ filterByMAF <- function(genotypeFile, params, thresholdMAF) {
 		AF <- mean(x,na.rm=T)/ploidy;
 		MAF <- ifelse(AF > 0.5,1-AF,AF)
 	}
-	MAF         <- apply (numericMatrixM,2,mafFunction)
-	polymorphic <- which (MAF>thresholdMAF)
+	MAF         = apply (numericMatrixM,2,mafFunction)
+	polymorphic = which (MAF>thresholdMAF)
+	genoNum     = genoNum [polymorphic, ]
+	genoMap     = genoMap [polymorphic,]
 
-	map = map[polymorphic,]
-	map = map[order(map$Chrom,map$Position),]
-	msgmsg ("Number of polymorphic markers:", nrow (map),"\n")
+	genoMap = genoMap[order(genoMap$Chrom,genoMap$Position),]
+	msgmsg ("Number of polymorphic markers:", nrow (genoMap),"\n")
 
 	numericMatrixM = numericMatrixM[,polymorphic]
-	#numericMatrixM <- numericMatrixM[,map$Marker]
+	#numericMatrixM <- numericMatrixM[,genoMap$Marker]
 	
 	missing <- which(is.na(numericMatrixM))
 	if (length(missing)>0) {
@@ -761,41 +931,32 @@ filterByMAF <- function(genotypeFile, params, thresholdMAF) {
 	rownames (geno) = geno [,1]
 	genoMAF         = geno [colnames(numericMatrixM),]
 	genoMAFFile     = addLabel (genotypeFile, "MAF")
-	write.csv (genoMAF, genoMAFFile, quote=F, row.names=F)
-
-	# Write chromosome info 
-	#write.table (file="out/map.tbl", map, quote=F, row.names=F, sep="\t")
+	write.csv (genoMAF, genoMAFFile, row.names=F)
 
 	# Write numeric geno
-	rownames (numericGeno) = numericGeno [,1]
-	numericGeno            = numericGeno [polymorphic, ]
-	genotypeNumFile        = addLabel (genotypeFile, "MAF-NUM")  
-	write.csv (numericGeno, genotypeNumFile, quote=F, row.names=F)
+	rownames (genoNum) = genoNum [,1]
+	genotypeNumFile    = addLabel (genotypeFile, "MAF-NUM")  
+	genotypeMapFile    = addLabel (genotypeFile, "MAF-MAP")  
+	write.csv (genoNum, genotypeNumFile, row.names=F)
+	write.csv (genoMap, genotypeMapFile, row.names=F)
 							  
-	return (list (genotypeFile=genoMAFFile, geno=genoMAF, genotypeNumFile=genotypeNumFile))
+	return (list (genotypeFile=genoMAFFile, geno=genoMAF, genotypeNumFile=genotypeNumFile, 
+				  nMarkers=nMarkers, nSamples=nSamples))
 }
 
-#----------------------------------------------------------
-# Util to print head of data
-# Fast head, for debug only
-#----------------------------------------------------------
-view <- function (data, n=5,m=6) {
-	name = paste (deparse (substitute (data)),":  ")
-	if (is.null (dim (data))) {
-		dimensions = paste (length (data))
-		message (name, "(", paste0 (dimensions),")")
-		if (length (data) < 6) n = length(data)
-		print (data[1:n])
-	}else {
-		dimensions = paste0 (unlist (dim (data)),sep=c(" x ",""))
-		message (name, "(", paste0 (dimensions),")")
-		if (nrow (data) < 5) n = nrow(data)
-		if (ncol (data) < 6) m = ncol(data)
-		print (data[1:n,1:m])
-	}
-	#write.csv (data, paste0("x-", filename, ".csv"), quote=F, row.names=F)
+#-------------------------------------------------------------
+# Add label to filename and new extension (optional)
+#-------------------------------------------------------------
+addLabelExt <- function (filename, label, newExt=NULL)  {
+	nameext = strsplit (filename, split="[.]")
+	name    = nameext [[1]][1] 
+	if (is.null (newExt))
+		ext     = nameext [[1]][2] 
+	else
+		ext     = newExt
+	newName = paste0 (nameext [[1]][1], "-", label, ".", ext )
+	return (newName)
 }
-
 #----------------------------------------------------------
 # Create dir, if it exists the it is renamed old-XXX
 #----------------------------------------------------------
@@ -816,10 +977,31 @@ createDir <- function (newDir) {
 	system (sprintf ("mkdir %s", newDir))
 }
 
+#--------------------------------------------------------
+# Print parameters configuration file
+#--------------------------------------------------------
+printParameters <- function (params) {
+	# Print params file
+	msgmsg ("-----------------------------------------------------------")
+	msgmsg ("Summary of configuration parameters:")
+	msgmsg ("-----------------------------------------------------------")
+	for (i in 1:length (params)) 
+		msgmsg (sprintf ("%-18s : %s", names (params[i]), 
+			if (is.null (params [i][[1]])) "NULL" else params [i][[1]]    ))
+	msgmsg ("-----------------------------------------------------------")
+
+}
+
 #-------------------------------------------------------------
 # Call main 
 #-------------------------------------------------------------
 main ()
+quit()
+
+tryCatch ({main ()}, 
+	error=function (e){
+		printLOGS(e)
+	})
 quit()
 withCallingHandlers (
 	main (), 

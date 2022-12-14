@@ -37,35 +37,42 @@ public class ViewInputs extends javax.swing.JPanel {
 
     public void setDefaults() {
         fieldOutputDir.setText(System.getProperty("user.home"));
-        fieldPloidy.setSelectedIndex(0);
-        genotypeText.setText("");
+        fieldGeno.setText("");
         fieldPheno.setText("");
+        fieldMap.setText("");
+
+        fieldPloidy.setSelectedIndex(0);
         fieldSignificance.setText("0.05");
         fieldCorrection.setSelectedIndex(0);
         fieldModel.setSelectedIndex(0);
         fieldSNPs.setSelectedIndex(9);
+
         fieldFiltering.setSelectedIndex(0);
         fieldFilterMAF.setText("0.01");
         fieldFilterMIND.setText("0.1");
         fieldFilterGENO.setText("0.1");
         fieldFilterHWE.setText("1e-10");
+        fieldR2.setText ("0.9");
     }
 
     public void clearInputs() {
-        fieldPloidy.setSelectedIndex(0);
         fieldOutputDir.setText("");
-        genotypeText.setText("");
+        fieldGeno.setText("");
         fieldPheno.setText("");
-        mapText.setText("");
+        fieldMap.setText("");
+
+        fieldPloidy.setSelectedIndex(0);
         fieldSignificance.setText("");
         fieldCorrection.setSelectedIndex(0);
         fieldModel.setSelectedIndex(0);
         fieldSNPs.setSelectedIndex(9);
+
         fieldFiltering.setSelectedIndex(0);
         fieldFilterMAF.setText("");
         fieldFilterMIND.setText("");
         fieldFilterGENO.setText("");
         fieldFilterHWE.setText("");
+        fieldR2.setText("");
         setEnabledInputs(false);
     }
 
@@ -91,45 +98,54 @@ public class ViewInputs extends javax.swing.JPanel {
     }
     public void enableMapComponents (boolean enableFlag) {
         mapLabel.setEnabled (enableFlag);
-        mapText.setEnabled (enableFlag);
+        fieldMap.setEnabled (enableFlag);
         mapSelButton.setEnabled (enableFlag);
     } 
     
     // Init form with test mode options
     public void setTestMode (boolean testMode) {
         if (testMode) {
-            genotypeText.setText ("/home/lg/agrosavia/GWAS-TOOL/development/tests/jmultiGWAS/example-genotype-tetra.csv");
-            fieldPheno.setText ("/home/lg/agrosavia/GWAS-TOOL/development/tests/jmultiGWAS/example-phenotype.csv");
+            fieldGeno.setText ("/home/lg/tpm/test/gwaspoly-genotype-500.csv");
+            fieldPheno.setText ("/home/lg/tmp/test/example-phenotype-single-trait.csv");
+            fieldFiltering.setSelectedIndex(1);
+            
         }
     }
 
     public String getInputValues() {
         StringBuffer txt = new StringBuffer(500);
         String ln = System.lineSeparator();
-        txt.append("default:" + ln);
-        txt.append("  ploidy               : " + fieldPloidy.getSelectedItem().toString() + ln);
-        txt.append("  genotypeFile         : " + '"' + genotypeText.getText() + '"' + ln);
-        txt.append("  phenotypeFile        : " + '"' + fieldPheno.getText() + '"' + ln);
-        txt.append("  genotypeFormat       : " + '"' + genotypeFormatCBox.getSelectedItem().toString() + '"' + ln);        
-        txt.append("  mapFile              : " + '"' + mapText.getText() + '"' + ln); 
-        txt.append("  significanceLevel    : " + fieldSignificance.getText() + ln);
-        txt.append("  correctionMethod     : " + '"' + fieldCorrection.getSelectedItem().toString() + '"' + ln);
-        txt.append("  gwasModel            : " + fieldModel.getSelectedItem().toString() + ln);
-        txt.append("  nBest                : " + fieldSNPs.getSelectedItem().toString() + ln);
-        txt.append("  filtering            : " + fieldFiltering.getSelectedItem().toString() + ln);
-        txt.append("  MAF                  : " + fieldFilterMAF.getText() + ln);
-        txt.append("  MIND                 : " + fieldFilterMIND.getText() + ln);
-        txt.append("  GENO                 : " + fieldFilterGENO.getText() + ln);
-        txt.append("  HWE                  : " + fieldFilterHWE.getText() + ln);
-        txt.append("  tools                : " + '"' + controller.getToolsToRun() + '"' + ln);
-        txt.append("  geneAction           : " + '"' + controller.getGeneAction() + '"' + ln);
+        txt.append("# Files:" + ln);
+        txt.append("  genotypeFile        : " + '"' + fieldGeno.getText() + '"' + ln);
+        txt.append("  phenotypeFile       : " + '"' + fieldPheno.getText() + '"' + ln);
+        txt.append("  genotypeFormat      : " + '"' + genotypeFormatCBox.getSelectedItem().toString() + '"' + ln);        
+        txt.append("  mapFile             : " + '"' + fieldMap.getText() + '"' + ln); 
+
+        txt.append("# GWAS model:" + ln);
+        txt.append("  ploidy              : " + fieldPloidy.getSelectedItem().toString() + ln);        
+        txt.append("  significanceLevel   : " + fieldSignificance.getText() + ln);
+        txt.append("  correctionMethod    : " + '"' + fieldCorrection.getSelectedItem().toString() + '"' + ln);
+        txt.append("  gwasModel           : " + fieldModel.getSelectedItem().toString() + ln);
+        txt.append("  geneAction          : " + '"' + controller.getGeneAction() + '"' + ln);
+        txt.append("  R2                  : " + '"' + fieldR2.getText() + '"' + ln);
+        
+        txt.append("# Quality control:" + ln);
+        txt.append("  filtering           : " + fieldFiltering.getSelectedItem().toString() + ln);
+        txt.append("  MAF                 : " + fieldFilterMAF.getText() + ln);
+        txt.append("  MIND                : " + fieldFilterMIND.getText() + ln);
+        txt.append("  GENO                : " + fieldFilterGENO.getText() + ln);
+        txt.append("  HWE                 : " + fieldFilterHWE.getText() + ln);
+
+        txt.append("# Tools:" + ln);
+        txt.append("  nBest               : " + fieldSNPs.getSelectedItem().toString() + ln);
+        txt.append("  tools               : " + '"' + controller.getToolsToRun() + '"' + ln);
 
         return txt.toString();
     }
 
     public boolean checkCompleteInfo() {
         if (fieldOutputDir.getText().equals ("")) return false;
-        if (genotypeText.getText().equals ("")) return false;
+        if (fieldGeno.getText().equals ("")) return false;
         if (fieldPheno.getText().equals ("")) return false;
         if (fieldSignificance.getText().equals ("")) return false;
         if (fieldFilterMAF.getText().equals ("")) return false;
@@ -140,7 +156,7 @@ public class ViewInputs extends javax.swing.JPanel {
         if (genotypeFormatCBox.getSelectedItem().toString().equals ("KMatrix") ||
             genotypeFormatCBox.getSelectedItem().toString().equals ("FitPoly") ||
             genotypeFormatCBox.getSelectedItem().toString().equals ("Updog"))
-                if (mapText.getText().equals("")) return false;
+                if (fieldMap.getText().equals("")) return false;
                 
         if (controller.getToolsToRun().equals ("")) return false;
         System.out.println("Success: complete information!!");
@@ -179,7 +195,7 @@ public class ViewInputs extends javax.swing.JPanel {
         fieldPheno = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
         genotypeLabel = new javax.swing.JLabel();
-        genotypeText = new javax.swing.JTextField();
+        fieldGeno = new javax.swing.JTextField();
         selGenotypeButton = new javax.swing.JButton();
         selOutputDirButton = new javax.swing.JButton();
         selPhenotypeButton = new javax.swing.JButton();
@@ -190,7 +206,7 @@ public class ViewInputs extends javax.swing.JPanel {
         genotypeFormatLabel = new javax.swing.JLabel();
         genotypeFormatCBox = new javax.swing.JComboBox<>();
         mapLabel = new javax.swing.JLabel();
-        mapText = new javax.swing.JTextField();
+        fieldMap = new javax.swing.JTextField();
         mapSelButton = new javax.swing.JButton();
         panelOptions = new javax.swing.JPanel();
         panelParametersTitle = new javax.swing.JPanel();
@@ -252,8 +268,8 @@ public class ViewInputs extends javax.swing.JPanel {
 
         genotypeLabel.setText("Genotype file:");
 
-        genotypeText.setToolTipText("Select genotype file");
-        genotypeText.setPreferredSize(new java.awt.Dimension(90, 19));
+        fieldGeno.setToolTipText("Select genotype file");
+        fieldGeno.setPreferredSize(new java.awt.Dimension(90, 19));
 
         selGenotypeButton.setText("Select...");
         selGenotypeButton.addActionListener(new java.awt.event.ActionListener() {
@@ -298,9 +314,9 @@ public class ViewInputs extends javax.swing.JPanel {
         mapLabel.setText("Map file:");
         mapLabel.setEnabled(false);
 
-        mapText.setToolTipText("Select phenotype file");
-        mapText.setEnabled(false);
-        mapText.setPreferredSize(new java.awt.Dimension(90, 19));
+        fieldMap.setToolTipText("Select phenotype file");
+        fieldMap.setEnabled(false);
+        fieldMap.setPreferredSize(new java.awt.Dimension(90, 19));
 
         mapSelButton.setText("Select...");
         mapSelButton.setEnabled(false);
@@ -330,7 +346,7 @@ public class ViewInputs extends javax.swing.JPanel {
                     .addGroup(panelGenotypeInfoLayout.createSequentialGroup()
                         .addComponent(mapLabel)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(mapText, javax.swing.GroupLayout.PREFERRED_SIZE, 447, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(fieldMap, javax.swing.GroupLayout.PREFERRED_SIZE, 447, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(mapSelButton)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -348,7 +364,7 @@ public class ViewInputs extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panelGenotypeInfoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(mapLabel)
-                    .addComponent(mapText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldMap, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(mapSelButton, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -372,7 +388,7 @@ public class ViewInputs extends javax.swing.JPanel {
                             .addComponent(jLabel2))
                         .addGap(30, 30, 30)
                         .addGroup(panelPathsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(genotypeText, javax.swing.GroupLayout.DEFAULT_SIZE, 563, Short.MAX_VALUE)
+                            .addComponent(fieldGeno, javax.swing.GroupLayout.DEFAULT_SIZE, 515, Short.MAX_VALUE)
                             .addComponent(fieldPheno, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(panelPathsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -391,7 +407,7 @@ public class ViewInputs extends javax.swing.JPanel {
                 .addGap(12, 12, 12)
                 .addGroup(panelPathsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(genotypeLabel)
-                    .addComponent(genotypeText, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldGeno, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(selGenotypeButton, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(panelPathsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -422,22 +438,16 @@ public class ViewInputs extends javax.swing.JPanel {
         panelParameters.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         panelParameters.setAlignmentY(1.5F);
         panelParameters.setPreferredSize(new java.awt.Dimension(350, 250));
-        panelParameters.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         labelGwasModel.setText("GWAS model:");
-        panelParameters.add(labelGwasModel, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, -1, -1));
 
         fieldModel.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Full", "Naive" }));
-        panelParameters.add(fieldModel, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 50, 130, -1));
 
         jLabel3.setText("Significance Level:");
-        panelParameters.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 80, -1, -1));
 
         fieldSignificance.setText("0.05");
-        panelParameters.add(fieldSignificance, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 80, 130, 20));
 
         jLabel4.setText("Correction Method:");
-        panelParameters.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, -1, -1));
 
         fieldCorrection.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Bonferroni", "FDR" }));
         fieldCorrection.addActionListener(new java.awt.event.ActionListener() {
@@ -445,17 +455,13 @@ public class ViewInputs extends javax.swing.JPanel {
                 fieldCorrectionActionPerformed(evt);
             }
         });
-        panelParameters.add(fieldCorrection, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 110, 130, -1));
 
         jLabel5.setText("Number of Best SNPs:");
-        panelParameters.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 140, -1, -1));
 
         fieldSNPs.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" }));
         fieldSNPs.setSelectedIndex(9);
-        panelParameters.add(fieldSNPs, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 140, 130, -1));
 
         jLabel6.setText("Filtering:");
-        panelParameters.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 170, -1, -1));
 
         fieldFiltering.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "TRUE", "FALSE" }));
         fieldFiltering.addActionListener(new java.awt.event.ActionListener() {
@@ -463,21 +469,75 @@ public class ViewInputs extends javax.swing.JPanel {
                 fieldFilteringActionPerformed(evt);
             }
         });
-        panelParameters.add(fieldFiltering, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 170, 130, -1));
 
         labelPloidy.setText("Ploidy:");
-        panelParameters.add(labelPloidy, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, -1, -1));
 
         fieldPloidy.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "4", "2" }));
-        panelParameters.add(fieldPloidy, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 20, 130, -1));
 
         labelR2.setText("LD threshold (R2):");
-        panelParameters.add(labelR2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 200, 130, -1));
 
         fieldR2.setText("1.0");
         fieldR2.setPreferredSize(new java.awt.Dimension(30, 18));
         fieldR2.setRequestFocusEnabled(false);
-        panelParameters.add(fieldR2, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 200, 130, 20));
+
+        javax.swing.GroupLayout panelParametersLayout = new javax.swing.GroupLayout(panelParameters);
+        panelParameters.setLayout(panelParametersLayout);
+        panelParametersLayout.setHorizontalGroup(
+            panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelParametersLayout.createSequentialGroup()
+                .addGap(12, 12, 12)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel4)
+                    .addComponent(jLabel5)
+                    .addComponent(jLabel6)
+                    .addComponent(labelPloidy)
+                    .addComponent(labelGwasModel)
+                    .addComponent(labelR2, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(fieldCorrection, 0, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldSNPs, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldFiltering, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldPloidy, 0, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldModel, 0, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldR2, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(fieldSignificance, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(61, Short.MAX_VALUE))
+        );
+        panelParametersLayout.setVerticalGroup(
+            panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelParametersLayout.createSequentialGroup()
+                .addGap(9, 9, 9)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelPloidy)
+                    .addComponent(fieldPloidy, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(14, 14, 14)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelGwasModel)
+                    .addComponent(fieldModel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(12, 12, 12)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(fieldSignificance, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(12, 12, 12)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(fieldCorrection, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(fieldSNPs, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(12, 12, 12)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(labelR2)
+                    .addComponent(fieldR2, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(panelParametersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(fieldFiltering, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6))
+                .addGap(6, 6, 6))
+        );
 
         panelParametersTitle.add(panelParameters, java.awt.BorderLayout.CENTER);
 
@@ -505,6 +565,11 @@ public class ViewInputs extends javax.swing.JPanel {
         fieldFilterMAF.setText("0.01");
         fieldFilterMAF.setPreferredSize(new java.awt.Dimension(25, 15));
         fieldFilterMAF.setRequestFocusEnabled(false);
+        fieldFilterMAF.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                fieldFilterMAFActionPerformed(evt);
+            }
+        });
 
         jLabel7.setText("<html>Minimum Minor Allele Frequency (MAF) for a SNP to be kept: </html>");
         jLabel7.setName("<html>Exclude SNPs with minor <br> allele frequency less than </html>"); // NOI18N
@@ -525,24 +590,24 @@ public class ViewInputs extends javax.swing.JPanel {
             panelFiltersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(panelFiltersLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(panelFiltersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(panelFiltersLayout.createSequentialGroup()
-                        .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(fieldFilterGENO, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(panelFiltersLayout.createSequentialGroup()
-                        .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(fieldFilterHWE, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(panelFiltersLayout.createSequentialGroup()
-                        .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(fieldFilterMIND, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(panelFiltersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(panelFiltersLayout.createSequentialGroup()
                         .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(fieldFilterMAF, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(fieldFilterMAF, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelFiltersLayout.createSequentialGroup()
+                        .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(fieldFilterMIND, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelFiltersLayout.createSequentialGroup()
+                        .addComponent(jLabel16, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(fieldFilterGENO, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelFiltersLayout.createSequentialGroup()
+                        .addComponent(jLabel17, javax.swing.GroupLayout.PREFERRED_SIZE, 232, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(fieldFilterHWE, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(70, Short.MAX_VALUE))
         );
         panelFiltersLayout.setVerticalGroup(
             panelFiltersLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -622,7 +687,7 @@ public class ViewInputs extends javax.swing.JPanel {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
                 //This is where a real application would open the file.
-                genotypeText.setText(file.getAbsolutePath());
+                fieldGeno.setText(file.getAbsolutePath());
                 prefs.put(LAST_USED_FOLDER, fc.getSelectedFile().getParent());
             }
         }        // TODO add your handling code here:
@@ -636,7 +701,7 @@ public class ViewInputs extends javax.swing.JPanel {
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
                 //This is where a real application would open the file.
-                mapText.setText(file.getAbsolutePath());
+                fieldMap.setText(file.getAbsolutePath());
             }
         }
     }//GEN-LAST:event_mapSelButtonActionPerformed
@@ -664,6 +729,10 @@ public class ViewInputs extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_fieldCorrectionActionPerformed
 
+    private void fieldFilterMAFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fieldFilterMAFActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_fieldFilterMAFActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JComboBox<String> fieldCorrection;
@@ -672,6 +741,8 @@ public class ViewInputs extends javax.swing.JPanel {
     private javax.swing.JTextField fieldFilterMAF;
     private javax.swing.JTextField fieldFilterMIND;
     private javax.swing.JComboBox<String> fieldFiltering;
+    private javax.swing.JTextField fieldGeno;
+    private javax.swing.JTextField fieldMap;
     private javax.swing.JComboBox<String> fieldModel;
     private javax.swing.JTextField fieldOutputDir;
     private javax.swing.JTextField fieldPheno;
@@ -683,7 +754,6 @@ public class ViewInputs extends javax.swing.JPanel {
     private javax.swing.JComboBox<String> genotypeFormatCBox;
     private javax.swing.JLabel genotypeFormatLabel;
     private javax.swing.JLabel genotypeLabel;
-    private javax.swing.JTextField genotypeText;
     private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel15;
@@ -705,7 +775,6 @@ public class ViewInputs extends javax.swing.JPanel {
     private javax.swing.JLabel labelR2;
     private javax.swing.JLabel mapLabel;
     private javax.swing.JButton mapSelButton;
-    private javax.swing.JTextField mapText;
     private javax.swing.JPanel panelFilesTitle;
     private javax.swing.JPanel panelFilters;
     private javax.swing.JPanel panelFiltersTitle;

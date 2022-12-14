@@ -17,78 +17,117 @@ main <- function () {
 # Get params from config file and define models according to ploidy
 #-------------------------------------------------------------
 readCheckConfigParameters <- function (paramsFile) {
-	params = tryCatch (yaml.load_file (paramsFile), 
-					   error=function (cond){
-						   stop ("Some errors in configuration file. Check for valid or repeated names!!!")
-					   })
+	msg ("Reading and checking config parameters...")
+	
+	# Check input files: config, geno, pheno, map
+	params = checkInputFiles (paramsFile)
+
+	checkPloidy (params)
 	params = checkParameterR2 (params)         # default 1.0
 	params = checkParameterGeneAction (params) # default "additive"
-	params = checkParameterTraitType (params)  # default "quantitative"
 	params = checkParameterCorrectionMethod (params)
-	print (params);quit ()
-
-	params$paramsFilename = paramsFile
+	params = checkParameterNonModelOrganism (params) 
+	if (is.null (params$traitType)) params$traitType = "quantitative"
 
 	# Change to lower case text parameters
 	params$genotypeFormat   = tolower (params$genotypeFormat) 
 	params$gwasModel        = tolower (params$gwasModel) 
 	params$filtering        = ifelse (tolower (params$filtering)=="true", T, F) 
+	params$nonModelOrganism = ifelse (tolower (params$nonModelOrganism)=="true", T, F) 
 	params$tools            = tolower (params$tools) 
 	params$geneAction       = tolower (params$geneAction) 
 
+	return (params)
+}
 
-	`%notin%` <- Negate(`%in%`)
+#----------------------------------------------------------
+# Check non-model organisms and number of chromosomes 
+#----------------------------------------------------------
+checkParameterNonModelOrganism <- function (params) {
+	msg ("Cheking parameters for non-model organism...")
+	nonModel     = params$nonModelOrganism
+	nChromosomes = params$numberOfChromosomes
 
-	# Check possible errors in ploidy 
-	if (params$ploidy %notin% c("2", "4"))   stop ("MG Error: Ploidy not supported")
-
-	# Create output dir, check input files, and copy files to output dir
-	outDir   = paste0 ("out-", strsplit (paramsFile, split="[.]") [[1]][1])
-	createDir (outDir)
-	if (!file.exists (params$genotypeFile)) 
-		stop (sprintf ("MG Error: Genotype file not found: '%s'", params$genotypeFile), call.=T)
-	runCommand(sprintf ("cp %s %s", params$genotypeFile, outDir))
-	params$genotypeFile  = basename (params$genotypeFile)
-
-	if (!file.exists (params$phenotypeFile)) 
-		stop (sprintf ("MG Error: Phenotype file not found: '%s'", params$phenotypeFile), call.=T)
-	runCommand(sprintf ("cp %s %s", params$phenotypeFile, outDir))
-	params$phenotypeFile = basename (params$phenotypeFile)
-
-	if (tolower (params$genotypeFormat) %in% c("kmatrix", "fitpoly", "updog")) {
-		if (is.null (params$mapFile) | !file.exists (params$mapFile))      
-			stop ("MG Error: Map file not found or not specified in the config file", call.=T)
-		file.copy (params$mapFile, outDir)
-		params$mapFile = basename (params$mapFile)
-	}
-	# Change to the output dir and set global OUTDIR 
-	setwd (outDir)
-	#OUTDIR <<- paste0 (getwd(), "/", outDir)
-	
-	# Create params files for each trait
-	phenotype = read.csv (params$phenotypeFile, check.names=F)
-	traitList = colnames (phenotype)[-1]
-	traitConfigList = c()
-	for (traitName in traitList) {
-		params$trait = traitName
-		traitConfig     = createTraitConfigFiles (phenotype, traitName, paramsFile, params)
-		traitConfigList = c (traitConfigList, traitConfig)
+	if (is.null (nonModel) || nonModel==FALSE) {# | nonModel==FALSE)
+		msgmsg ("Non-model organism set to FALSE...")
+		params$nonModelOrganism = FALSE
+		return (params)
 	}
 
-	params$traitConfigList = traitConfigList 
+	if (nonModel %notin% c(TRUE,FALSE)) {
+		message ("------------------------------------------------------------------")
+		message ("Error in nonModelOrganism parameter. Value must be TRUE or FALSE.")
+		message ("------------------------------------------------------------------")
+		quit()
+	}
 
-	# Print params file
-	msgmsg ("-----------------------------------------------------------")
-	msgmsg ("Summary of configuration parameters:")
-	msgmsg ("-----------------------------------------------------------")
-	for (i in 1:length (params)) 
-		msgmsg (sprintf ("%-18s : %s", names (params[i]), 
-			if (is.null (params [i][[1]])) "NULL" else params [i][[1]]    ))
-	msgmsg ("-----------------------------------------------------------")
-
-
+	if (is.null (nChromosomes) || !is.integer (as.integer (nChromosomes))) {
+		message ("------------------------------------------------------------------")
+		message ("Error in numberOfChromosomes parameter. It needs a valid number." )
+		message ("------------------------------------------------------------------")
+		quit()
+	}
 
 	return (params)
+}
+
+#----------------------------------------------------------
+# Check possible errors in ploidy 
+#----------------------------------------------------------
+checkPloidy <- function (params) {
+	if (params$ploidy %notin% c("2", "4"))   {
+		message ("----------------------------------------------------------------------------")
+		message ("Error: Ploidy: ", params$ploidy, " not supported")
+		message ("----------------------------------------------------------------------------")
+		quit ()
+	}
+}
+
+#----------------------------------------------------------
+# Check input files: params, genotype, phenotype, mapfile
+#----------------------------------------------------------
+checkInputFiles <- function (paramsFile) {
+	msg ("Checking input files...")
+
+	errMsg <- function (text) {
+		message ("----------------------------------------------------------------------------")
+		message (text)
+		message ("----------------------------------------------------------------------------")
+		quit() 
+	}
+
+	# Check configuration file
+	if (file.exists (paramsFile)==F) 
+		errMsg ("\nError: Configuration file not found\n")
+
+	params = tryCatch (yaml.load_file (paramsFile), error=function (cond){
+					errMsg (sprintf ("Error: Configuration file with invalid or repeated names!!!"))})
+
+	# Check genotype file
+	if (!file.exists (params$genotypeFile)) 
+		errMsg (sprintf ("Error: Genotype file not found: '%s'", params$genotypeFile))
+
+	# Check phenotype file
+	if (!file.exists (params$phenotypeFile)) 
+		errMsg (sprintf ("Error: Phenotype file not found: '%s'", params$phenotypeFile))
+
+	# Check phenotype format
+	if (ncol(read.csv(params$phenotypeFile))==1)
+		errMsg ("Error: Phenotype is not in CSV format or it only has one column.")
+
+	# Check genotype format
+	format  = tolower (params$genotypeFormat)
+	if (format %in% c("matrix","gwaspoly","updog"))
+		if (ncol (read.csv(params$genotypeFile))==1)
+			errMsg ("Error: Genotype is not in CSV format or it only has one column.")
+
+	# Check maps file
+	if (tolower (params$genotypeFormat) %in% c("matrix", "fitpoly", "updog")) 
+		if (is.null (params$mapFile) || !file.exists (params$mapFile))
+			errMsg ("Error: Map file not found or not specified in the config file")
+
+	return (params)
+
 }
 
 #----------------------------------------------------------
@@ -118,19 +157,6 @@ checkParameterGeneAction <- function (params) {
 }
 
 #----------------------------------------------------------
-# TraitType
-#----------------------------------------------------------
-checkParameterTraitType <- function (params) {
-	if (is.null (params$traitType)) {
-		message ("-----------------------------------------------------------------------------")
-		message ('WARNING!! "traitType" parameter not defined, assumed traitType = quantitative')
-		message ("-----------------------------------------------------------------------------")
-		params$traitType = "quantitative"
-	}
-	return (params)
-}
-
-#----------------------------------------------------------
 # Correction method: "FDR" or "Bonferroni"
 #----------------------------------------------------------
 checkParameterCorrectionMethod <- function (params) {
@@ -144,6 +170,11 @@ checkParameterCorrectionMethod <- function (params) {
 	params$correctionMethod   = tolower (params$correctionMethod) 
 	if (params$correctionMethod %notin% c("bonferroni", "fdr"))
 		stop (paste0 ("MG Error: Unknown correction method: ", params$correctionMethod), call.=T)
+
+	if (params$correctionMethod=="bonferroni")
+		params$correctionMethod = "Bonferroni"
+	if (params$correctionMethod=="fdr")
+		params$correctionMethod = "FDR"
 
 	return (params)
 }

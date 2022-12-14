@@ -1,0 +1,17 @@
+PARAMETER	VALUE
+Genotype filename	example-genotype-tetra-gwaspoly-ACGT.csv
+Phenotype filename	tuber_shape.csv
+Genotype format (gwaspoly, matrix, vcf, updog, fitpoly)	gwaspoly
+Map filename	NAIVE
+Ploidy (4 or 2)	4
+Significance level (Genome-wide significance level)	0.05
+Correction method (Bonferroni or FDR)	Bonferroni
+GWAS model (Full or Naive)	full
+Filtering (TRUE or FALSE)	FALSE
+MIND Filter (Individual with missing genotype)	0.1
+GENO Filter (SNPs with missing genotype)	0.1
+MAF Filter (Minor allele frequency)	0.01
+HWE Filter (Hardy-Weinberg test)	1e-10
+R2 LD (Linkage disequilibrium threshold)	0.9
+GWAS Tools	gwaspoly shesis gapit tassel
+nBest (Number of top SNPs to be reported)	10

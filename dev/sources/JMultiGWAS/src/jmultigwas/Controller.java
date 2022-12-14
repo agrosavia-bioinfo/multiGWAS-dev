@@ -13,6 +13,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
+import java.net.URL;
 
 class Controller extends JFrame {
 
@@ -35,12 +36,12 @@ class Controller extends JFrame {
         super(text);
         model = new Model(this);
         setTitle("JMultiGWAS Tool for GWAS");
-        
+       
     }
 
     public void init() {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(900, 500);
+        this.setSize(950, 600);
 
         initViewTabs();
 
@@ -53,12 +54,12 @@ class Controller extends JFrame {
         tabInputs.setEnabledInputs(false);
         //setTestMode (true);
     }
-    
+
     // Start with test mode options
-    public void setTestMode (boolean testMode) {
+    public void setTestMode(boolean testMode) {
         if (testMode) {
-            tabInputs.setTestMode (testMode);
-            viewToolBar.setTestMode (testMode);
+            tabInputs.setTestMode(testMode);
+            viewToolBar.setTestMode(testMode);
         }
     }
 
@@ -67,7 +68,7 @@ class Controller extends JFrame {
         Dimension size = this.getSize();
 
         tabInputs = new ViewInputs(this, model);
-        tabOutputs = new ViewOutputs(size);
+        tabOutputs = new ViewOutputs(this, size);
         tabResults = new ViewResults(size);
         tabFiles = new ViewFiles(this);
         tabOutputs.init();
@@ -76,9 +77,9 @@ class Controller extends JFrame {
         viewTabs.addTab("Outputs", tabOutputs);
         viewTabs.addTab("Results", tabResults);
         viewTabs.addTab("Files", tabFiles);
-        
+
         viewToolBar = new ViewToolBar(this);
-        
+
         //onNewProject();
     }
 
@@ -97,12 +98,12 @@ class Controller extends JFrame {
     }
 
     public void onRunApplication() {
-        if (tabInputs.checkCompleteInfo()==false) {
+        if (tabInputs.checkCompleteInfo() == false) {
             JOptionPane.showMessageDialog(this, "Incomplete information", "MultiGWAS warning",
                     JOptionPane.WARNING_MESSAGE);
-        }else {
-            String outputDir  = tabInputs.getOutputDir();
-            String values     = tabInputs.getInputValues();
+        } else {
+            String outputDir = tabInputs.getOutputDir();
+            String values = tabInputs.getInputValues();
 
             model.runApplication(outputDir, values);
             viewTabs.setSelectedIndex(1);
@@ -115,39 +116,71 @@ class Controller extends JFrame {
     }
 
     public void onEndOfExecution() {
-        System.out.println ("Hello");
+        System.out.println("!!End of Execution.");
         String SEP = File.separator;
         String workingDir = tabInputs.getOutputDir();
         String dirName = Paths.get(workingDir).getFileName().toString();
         String outputDir = workingDir + SEP + "out-" + dirName;
-        
+
         // Get trait dir
         File[] directories = new File(outputDir).listFiles(File::isDirectory);
         String traitDir = directories[0].getName();
-        System.out.println (">>>" + traitDir);
-        
-        String reportDir    = outputDir + SEP + traitDir + SEP + "report";
-        String htmlFilename = outputDir + SEP + traitDir + SEP + "multiGWAS-report.html";
+        System.out.println(">>>" + traitDir);
+
+        String reportDir = outputDir + SEP + traitDir + SEP + "report";
+        String htmlFilename = outputDir + SEP + traitDir + "-report.html";
         //browseFile(htmlFilename, reportDir);
-        
-        writeLine ("Report of results in: <a href='file://"+htmlFilename+"'>"+htmlFilename+"</a>","html");
-        
+
+        writeLine("Report of results in: <a href='file://" + htmlFilename + "'>" + htmlFilename + "</a>", "html");
+        browseFile (htmlFilename);
+    
         // Set tabs 
         tabResults.showResults(htmlFilename);
         // viewTabs.setSelectedIndex(2);
         tabFiles.changeDir(reportDir);
         //tabResults = new ViewResults("/tmp/multiGWAS-report.html");  
     }
-    public void onGenotypeFormat (String genoFormat) {
+
+    public void onGenotypeFormat(String genoFormat) {
         if (genoFormat.matches("KMatrix|FitPoly|Updog")) {
-            System.out.println ("Received KMatrix");
+            System.out.println("Received KMatrix");
             tabInputs.enableMapComponents(true);
-        }else if (genoFormat.matches("GWASpoly|VCF")) {
-                tabInputs.enableMapComponents(false);
+        } else if (genoFormat.matches("GWASpoly|VCF")) {
+            tabInputs.enableMapComponents(false);
+        }
+    }
+    
+    public void browseFile (URL url){
+        browseFileUsingRuntime (url.toString());
+    }
+    public void browseFile (String urlString){
+        browseFileUsingRuntime (urlString);
+    }
+
+    public void browseFileUsingRuntime(String urlString) {
+        try {
+            Runtime rt = Runtime.getRuntime();
+            String[] browsers = {"xdg-open", "chromium-browser", "google-chrome", "firefox", "falkon", "midori","epiphany", "mozilla", "konqueror", "opera","arora"};
+            StringBuffer cmd = new StringBuffer();
+            for (int i = 0; i < browsers.length; i++) {
+                if (i == 0) {
+                    cmd.append(String.format("%s \"%s\"", browsers[i], urlString));
+                } else {
+                    cmd.append(String.format(" || %s \"%s\"", browsers[i], urlString));
+                }
+            }
+            // If the first didn't work, try the next browser and so on
+            String cmdString[] = new String[] { "sh", "-c", cmd.toString() };
+            tabOutputs.writeLine ("Testing browsers:" + cmdString,"");
+            rt.exec(cmdString);
+            
+        } catch (Exception e1) {
+            e1.printStackTrace();
         }
     }
 
-    public void browseFile(String url) {
+    public void browseFileUsingDesktop(final URL url) {
+
         String myOS = System.getProperty("os.name").toLowerCase();
         OUT("(Your operating system is: " + myOS + ")\n");
 
@@ -155,7 +188,7 @@ class Controller extends JFrame {
             if (myOS.contains("win") && Desktop.isDesktopSupported()) { // Probably Windows
                 OUT(" -- Going with Desktop.browse ...");
                 Desktop desktop = Desktop.getDesktop();
-                desktop.browse(new URI(url));
+                desktop.browse(url.toURI());
             } else { // Definitely Non-windows
                 Runtime runtime = Runtime.getRuntime();
                 if (myOS.contains("mac")) { // Apples
@@ -177,6 +210,7 @@ class Controller extends JFrame {
 
     public void writeLine(String s, String type) {
         tabOutputs.writeLine(s, type);
+        System.out.println (s);
     }
 
     private void OUT(String string) {

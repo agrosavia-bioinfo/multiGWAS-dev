@@ -13,4 +13,4 @@ Imports: stats, graphics
 Packaged: 2020-10-18 12:56:46 UTC; nuno
 Repository: CRAN
 Date/Publication: 2020-10-20 07:00:09 UTC
-Built: R 3.6.3; ; 2021-03-16 21:54:00 UTC; unix
+Built: R 4.1.2; ; 2022-12-05 17:52:40 UTC; unix

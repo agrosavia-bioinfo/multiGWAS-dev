@@ -1,19 +1,22 @@
+
+# MultiGWAS
+MultiGWAS is a tool that does GWAS for diploid and tetraploid organisms by executing in parallel four GWAS software, two for polyploid data (GWASpoly and SHEsis) and two for diploids data (GAPIT and TASSEL). MultiGWAS has several advantages. It runs either in the command line or in an graphical interface; it manages different genotype formats, including VCF; it allows control for population structure and relatedness, along with several quality control checks on genotype data. Besides, MultiGWAS can test for each GWAS tool all its gene action models, and through a proprietary scoring function, select the best model to report its associations. Finally, it generates several reports that facilitate the identification of false associations from both the significant and the top association SNP among the four software.
+
 Table of Contents
 =================
 <!--ts-->
-   * [Installation](#installation)
-      * [General steps to install multiGWAS on a Linux system](#general-steps-to-install-multigwas-on-a-linux-system)
-      * [Specific instructions to install multiGWAS on a Linux Ubuntu](#specific-instructions-to-install-multigwas-on-a-linux-ubuntu)
-         * [Install external software](#install-external-software)
-         * [Install MultiGWAS tool](#install-multigwas-tool)
+   * [MultiGWAS Installation](#multigwas-installation)
+      * [Installing from sources](#installation-from-sources)
+      * [Installing from precompiled libraries](#installing-from-precompiled-libraries) 
+      * [Installing from ready-to-use virtual machine and docker container](#installation-from-ready-to-use-virtual-machine-and-docker-container)
    * [Running MultiGWAS](#running-multigwas)
-      * [Using the command line interface](#using-the-command-line-interface)
-      * [Using the graphical user interface:](#using-the-graphical-user-interface)
+      * [Observations](#observations)
+      * [Using the command line interface (CLI interface):](#using-the-command-line-interface-cli-interface)
+      * [Using the graphical user interface (GUI interface):](#using-the-graphical-user-interface-gui-interface)
    * [Running the examples](#running-the-examples)
-   * [General usage](#general-usage)
    * [Configuration file](#configuration-file)
       * [Example of a configuration file](#example-of-a-configuration-file)
-      * [Genomic data inputs](#genomic-data-inputs)
+      * [Genomic data and formats](#genomic-data-and-formats)
          * ["genotypeFile"](#genotypefile)
          * ["genotypeFormat"](#genotypeformat)
          * ["phenotypeFile"](#phenotypefile)
@@ -22,115 +25,128 @@ Table of Contents
       * [Implementation](#implementation)
       * [Number of SNPs in Manhattan and QQ plots](#number-of-snps-in-manhattan-and-qq-plots)
       * [Correction for multiple testing](#correction-for-multiple-testing)
-
 <!--te-->
 
-# Installation
-We describe here the [MultiGWAS](https://github.com/agrosavia-bionformatics/multiGWAS) installation that contains the file sources and binaries to run the MultiGWAS tool. It includes:
-  - MultiGWAS tool sources (R code, Java application,  and binary bash scripts)
-  - MultiGWAS precompiled R libraries for Linux systems (tested on Ubuntu 18.04) 
-  - Binaries and Java classes for the four GWAS packages  GWASpoly, SHEsis, TASSEL, and PLINK (r1.9 and r2.0)
-  
-## General steps to install multiGWAS on a Linux system
-  1. Install pandoc markup converter, if not installed. 
-  2. Install git tool to clone github repository, if not installed.
-  3. Install Oracle Java runtime, if not installed.
-  4. Install R 3.6, if not installed. 
-  5. Clone the multiGWAS repository
-  6. Execute the multiGWAS installer:
+# Installing MultiGWAS 
+MultiGWAS offers different installations: from sources, precompiled versions, and ready-to-use virtual machine and docker image. Specific instructions are given below.
 
-## Specific instructions to install multiGWAS on a Linux Ubuntu
-### Install external software
-The MultiGWAS tool currently runs on Linux systems (tested on Ubuntu Linux 18.04 LTS, x86_64 GNU / Linux), and requires the following software to be installed:
-  - Install git tool and pandoc markup converter: 
-```
-    sudo apt install git pandoc
-```
-  - R 3.6 or higher. If not installed see https://cran.r-project.org/bin/linux/ubuntu/README.html or Open a Linux console and enter the following instructions for Ubuntu 18.04 (bionic):
-```
-    sudo apt install add-apt-key software-properties-common git
-    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB6517
-    sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran35/'16619E084DAB9
-    sudo apt update
-    sudo apt install r-base
-```
-  - Oracle Java JRE 8.x or higher. If not installed see https://computingforgeeks.com/install-oracle-java-openjdk-14-on-ubuntu-debian-linux/ or Open a Linux console (or terminal) and enter the following instructions for Ubuntu 18.04 (bionic):
-```
-   sudo add-apt-repository ppa:linuxuprising/java
-   sudo apt update
-   sudo apt install oracle-java14-installer
-   sudo apt install oracle-java14-set-default
-``` 
+## Installing from sources
+To install MultiGWAS from source on a Linux system (tested on Ubuntu 20.04), follow the instructions below: 
 
-### Install MultiGWAS tool
-Open a Linux console (or terminal) and enter the following instructions:
 ```
-# 1. Clone the MultiGWAS repository:
-    git clone https://github.com/agrosavia-bioinformatics/multiGWAS.git
-# 2. Change to the multiGWAS dir:
-    cd multiGWAS
-# 3. Execute the installer:
-    . INSTALL.SH         # dot space INSTALL.SH
-# 4. The MultiGWAS tool is ready to use.
+1. Open a linux console (or terminal)
+2. If not installed, install R (R>=3.6), Java, and git
+    sudo apt install r-base-core default-jre git
+3. Download or clone the MultiGWAS repository 
+    git clone https://github.com/agrosavia-bioinfo/multiGWAS.git
+4. Change to install directory:
+    cd multiGWAS/install
+5. Run the bash script to install the necessary linux packages (it needs sudo privileges).
+    sh install-linux-packages.sh
+6. Execute the R script to install the necessary R libraries:
+    Rscript install-R-libraries.R
+7. Open a new terminal or load the new configuration by typing:
+    source ~/.bashrc
+8. Test MultiGWAS command line interface by tiping:
+    multigwas 
+9. Test MultiGWAS command line interface by tiping:
+    jmultigwas
 ```
+
+## Installing from precompiled libraries
+To install MultiGWAS with precompiled R libraries (Ubuntu 22.04, R 4.1)  follow the instructions at:
+```
+1. Open a linux console (or terminal)
+2. If not installed, install R (R>=4.1), Java, git, and unzip
+    sudo apt install r-base-core default-jre git unzip
+3. Download or clone the MultiGWAS repository 
+    git clone https://github.com/agrosavia-bioinfo/multiGWAS.git
+4. Change to install directory:
+    cd multiGWAS/install
+5. Run the bash script to install the necessary linux packages (it needs sudo privileges).
+    sh install-linux-packages.sh
+6. Run the bash script to decompress precompiled R41 libraries:
+    sh install-R41-libraries.sh
+7. Open a new terminal or load the new configuration by typing:
+    source ~/.bashrc
+8. Test MultiGWAS command line interface by tiping:
+    multigwas 
+9. Test MultiGWAS command line interface by tiping:
+    jmultigwas
+```
+
+## Installing from ready-to-use virtual machine and docker container
+MultiGWAS can be tested on any platform (Linux, OS X, Windows) by using either a VirtualBox virtual machine or a Docker container. In both, MultiGWAS has been installed with all its dependencies (Linux, R, R libraries, and Java). Both solutions are described at:
+[https://github.com/agrosavia-bioinfo/MultiGWAS-vm](https://github.com/agrosavia-bioinfo/MultiGWAS-vm).
+
 
 # Running MultiGWAS 
-MultiGWAS can be run from any directory by calling a command line interface (CLI) developed in R or a graphical user interface (GUI) developed in Java (see below). In both, users have to open a terminal and run either the CLI script "multigwas.R" plus the configuration file or the GUI script "jmultigwas". Note that MultiGWAS was developed in R but does not run from the R interface as it integrates four GWAS software (GWASpoly, SHEsis, GAPIT and TASSEL) implemented in different languages.
+MultiGWAS can be run from any directory by calling either command "multigwas" or "jmultigwas". The former to run the command line interface (CLI) developed in R, and the latter to run the graphical user interface (GUI) developed in Java (see below). In both, users have to open a terminal and type the respective command. The CLI command needs an additional configuration file as parameter, while the GUI command open a graphical application to specify ". Detailed instructions are given below.
 
-## Using the command line interface
+## Observations
+  - MultiGWAS can be run from any directory (known as the working directory). For the CLI interface ("multigwas"), it only needs that the configuration file will be copied or created into the working directory (see below). For the GUI interface, the configuration file will be created interactively an saved into the working directory. In both interfaces, results are saved into the working directory. 
+  - Genomic files specified in the configuration file (genotype, phenotype, and map files) can be located in any directory, but if they are not located in the working directory, they have to be specified with the full path where they are located.
+  - MultiGWAS does not run from the R interface, althouth it was developed in R, as it integrates four GWAS software (GWASpoly, SHEsis, GAPIT and TASSEL) implemented in different languages. 
+
+
+## Using the command line interface (CLI interface):
   - Open a Linux console
   - Create a new directory or change to an existing one (working directory, e.g. test)
-  - Create a new configuration file or use an existing one (e.g. test.config, see below)
+  - Create a new configuration file or copy an existing one (e.g. test.config, see below)
   - Run the CLI MultiGWAS script followed by the name of the configuration file:
       ```
-      multigwas.R test.config
+      multigwas test.config
       ```
   - Open a file browser and view the results saved into the working directory. They include:
      - Full html report (with the same name as the analyzed trait)
      - Original graphics and tables generated by MultiGWAS.
      - Preprocessed tables with the GWAS results from the four GWAS packages
      
-## Using the graphical user interface:
-  - Open a linux console and execute the following script: 
-       ```
-       jmultiGWAS
-       ```
-	![MultiGWAS Gui](multiGWAS-gui.png)
+## Using the graphical user interface (GUI interface):
    - The GUI application is easy and straighforward. It includes four views:
       - Inputs view:  to create the configuration file and start the execution of MultiGWAS
       - Outputs view: to view the logs/messages from the current execution
       - Results view: to view a preview of the HTML report.
       - Files view:   to explore and open the results, including the original tables, graphics, and the full HTML report.
+  - To run the application, open a linux console and execute the command: 
+       ```
+       jmultiGWAS
+       ```
+  - The following GUI will be displayed with the input view ready to create the configuration file:
+
+	![MultiGWAS Gui](multiGWAS-gui.png)
+  - Set configuration parameters:
+    - In the **GWAS tools** panel: Choose the tools to run for the analysis.
+    - In the **Gene actions model** panel: Choose the gene action model to run for each GWAS tool.
+    - In the **Input/Output** panel: Choose the working directory, the genotype, and phenotype files. 
+    - In the **Genotype information** panel: Choose the genotype format and if it does not contain chromosome information, choose the file with this information (map file). Additionally, if the genotype is for a non-model organism, set the number of chromosomes to show in results (see below for detailed information of available genotype formats and mapfile structure).
+    - In the **GWAS Parameters** panel: Choose the parameter for GWAS analysis to be applied to the selected GWAS tools (see below) and select whether to apply quality filter to the genomic data or not (see below).
+    - In the **Quality Control Filters** panel: Choose the different filters to apply to genomic data and set their values or leave the default values.
+
+  - Run MultiGWAS: After all configuration parameters are specified, clicking the **Run** button will start the MultiGWAS analysis. Messages from the analysis will be shown in the **Outputs** tab, and at the end it will show a link to the report generated by MultiGWAS (an html file). Clicking on this link will open a browser showing the html report.
 
 # Running the examples
-The multiGWAS directory contains an "example" subfolder with genomic data ("example-genotype.tbl" and "example-phenotype.tbl" files) and two ready-to-use configuration files ("full.config" and "naive.config" files for **Naive** and **Full** GWAS analysis, respectively). Both genotype and phenotype come from the Solanaceae Coordinated Agricultural Project (SolCAP) potato diversity panel described in the paper. 
+The multiGWAS directory contains an ***examples*** directory with several examples, one for each genotype format. For each example there is a subdirectory named as the genotype format, each containing all the needed files to run the example, including: the configuration file, phenotype and genotype files, and the map file with chromosome information and reference/alternate alleles, for genotypes formats that does not include this information (see below).
 
-To run a Full GWAS analysis with the multiGWAS tool, follow the next steps:
- - Open a Linux terminal
- - Change to the "multiGWAS" directory
- - Change to the "example" subfolder
- - Execute the **multiGWAS tool** using as argument the configuration file "full.config":
-  ```
-        multiGWAS full.config 
-  ```
- - An output directory will be created named as "out-XXXX" where XXXX is the prefix of the configuration filename. For the above example, an "out-full" subfolder will be created with the following files and subfolders:
-    - A "multiGWAS-report.html" file in HTML format with the full report from the multiGWAS results.
-    - A "report" subfolder with the resulting tables and graphics included in the previous report file.
-    - An "out" subfolder that contains temporary files created by multiGWAS and the other GWAS tools.
-    - A "logs" subfolder that contains the log outputs from the different tools.
+To run an examples, follow the instructions below:
+```
+1. Open a terminal and change to the MultiGWAS directory:
+   cd multiGWAS
+2. Change to ***examples*** directory: 
+   cd examples
+3. Change to the specific example subdirectoy (e.g. "gwaspoly-format")
+   cd gwaspoly-format
+4. Run MultiGWAS with the configuration file  (e.g. "configuration-gwaspoly-format-Full-Filters.config")
+   multigwas configuration-gwaspoly-format-Full-Filters.config
+5. Open the system file manager and browse the MultiGWAS report (html file) saved on the working directory.
+```
+
+For each MultiGWAS execution, an output directory will be created named as "out-XXXX" where XXXX is the prefix of the configuration filename. The output directory contains:
+  - A file in HTML format with the full report from MultiGWAS results.
+  - A "report" subfolder with the resulting tables and graphics included in the previous report file.
+  - An "out" subfolder containing temporary files created by MultiGWAS and the other GWAS tools.
+  - A "logs" subfolder containing the log outputs from the different tools.
     
-# General usage
-  - Create a new directory (e.g. "test" directory).
-  - Copy the phenotype and genotype files to new directory (see data formats below)
-  - Create a configuration file (e.g. test.config) and copy it to the new directory (see configuration file below)
-  - Open a Linux terminal
-  - Change to the new directory
-  - Execute the multiGWAS tool using as argument the configuration file
-```
-      multiGWAS test.config
-```
-  - Results will be saved in the "out-test" directory
-
 # Configuration file
 The configuration file is a text file with a list of parameter names and their values separated by a colon (":"). This file is the main input for MultiGWAS and it can be created in three ways: using a general text editor, using the MultiGWAS GUI interface, or modifying an existing configuration file. 
 
@@ -139,50 +155,65 @@ Upper / lower case is relevant for the filenames. Blank lines and comment lines 
 
 Now, we briefly describe these parametes and then we show an example of a config file.
 
-|  Parameter name   | Description |                     
-|------------------ |------------  |                   
-| genotypeFile      | Genotype filename, file with the marker data (see genomic data section below) |
-| genotypeFormat    | Genotype format, currently four formats: "gwaspoly", "kmatrix", "vcf", and "fitpoly" (see genomic data section below) |
-| phenotypeFile     | Phenotype filename, file with the individuals and trait values (see genomic data section below) |
-| mapFile           | Map file, optional file with marker information (marker, reference allele, alternate, allele, chromosome, and position (see genomic data section below) |
-| significanceLevel | The genome-wide significance threshold α (commonly 0.01 or 0.05)|
-| correctionMethod  | The method for multiple testing correction (”Bonferroni” or ”FDR”)|
-| gwasModel         | The type of GWAS analysis (”Naive” or ”Full”)|
-| nBest             | Number of top associations to be reported
-| filtering         | TRUE or FALSE whether to use quality control (QC) filters or not (see below) |
-| MAF               | Minor allele frequency QC filter |
-| MIND              | Individual missing rate QC filter |
-| GENO              | SNP missing rate QC filter |
-| HWE               | Hardy-Weinberg threshold QC filter|
-| tools             | Tools to be used in the analysis. Any combination of the following tools: "GWASpoly", "TASSEL", "PLINK, and SHEsis
-| geneAction        | Gene-action assumed model (Marker-effect). Currently, four options: "additive", "general", "dominance", or "all" |
+|  Parameter name     | Description |                     
+|------------------   |------------  |                   
+| genotypeFile        | Genotype filename, file with the marker data (see genomic data section below) |
+| phenotypeFile       | Phenotype filename, file with the individuals and trait values (see genomic data section below) |
+| genotypeFormat      | Genotype format, currently four formats: "gwaspoly", "matrix", "vcf", "updog" and "fitpoly" (see genomic data section below) |
+| mapFile             | Map file, optional file with marker information (marker, reference allele, alternate, allele, chromosome, and position (see genomic data section below) |
+| nonModelOrganism    | TRUE or FALSE if the data is for a non-model organism or not (see below). |
+| numberOfChromosomes | Number of chromosomes to show in results when the data is from a non-model organism |
+| significanceLevel   | The genome-wide significance threshold α (commonly 0.01 or 0.05)|
+| correctionMethod    | The method for multiple testing correction (”Bonferroni” or ”FDR”)|
+| geneAction          | Gene-action assumed model (Marker-effect). Currently, four options: "additive", "general", "dominance", or "all" |
+| gwasModel           | The type of GWAS analysis (”Naive” or ”Full”)|
+| filtering           | TRUE or FALSE whether to use quality control (QC) filters or not (see below) |
+| MAF                 | Minor allele frequency QC filter |
+| MIND                | Individual missing rate QC filter |
+| GENO                | SNP missing rate QC filter |
+| HWE                 | Hardy-Weinberg threshold QC filter|
+| R2                  | User-defined squared correlation threshold (R²) above which a pair of SNPs is considered to be in linkage disequilibrium |
+| tools               | Tools to be used in the analysis. Any combination of the following tools: "GWASpoly", "SHEsis", "GAPIT, and TASSEL
+| nBest               | Number of top associations to be reported
 
 ## Example of a configuration file
 This is the contents of a typical configuration file named as "full-tetra.config":
 ```
-genotypeFile         : example-genotype.tbl
-phenotypeFile        : example-phenotype.tbl
-mapFile              : 
-genotypeFormat       : gwaspoly
-significanceLevel    : 0.05
-correctionMethod     : Bonferroni
-gwasModel            : Naive
-nBest                : 10
-filtering            : TRUE
-MAF                  : 0.01
-M IND                 : 0.1
-GENO                 : 0.1
-HWE                  : 1e-10
-tools                : GWASpoly SHEsis PLINK TASSEL
-geneAction           : additive
+# Files
+genotypeFile        : genotype-gwaspoly-format-example.csv
+phenotypeFile       : phenotype-tuber_shape-example.csv
+genotypeFormat      : gwaspoly
+mapFile             : NULL
+nonModelOrganism    : FALSE
+numberOfChromosomes :
+
+# GWAS model
+ploidy              : 4
+significanceLevel   : 0.05
+correctionMethod    : Bonferroni    
+gwasModel           : Full
+geneAction          : additive
+R2                  : 0.9 
+
+# Quality control
+filtering           : TRUE
+MAF                 : 0.01
+MIND                : 0.1 
+GENO                : 0.1 
+HWE                 : 1e-10 
+
+# Tools
+tools               : GWASpoly SHEsis GAPIT TASSEL
+nBest               : 10
+
 ```
-## Genomic data inputs
+## Genomic data and formats
 The following parameters from configuration file are related with the type of genomic data required by MultiGWAS. Below, we show the characteristics and structure of the input files. Keep in mind that the headeer line must be present in all the file formats we show below.
 ### "genotypeFile"
 It specifies the filename for the genotype data. (see below the accepted genotype formats).
 
 ### "genotypeFormat"
-Currently, MultiGWAS accepts five genotype formats: "gwaspoly", "kmatrix", "vcf", "fitpoly", and "updog":
+Currently, MultiGWAS accepts five genotype formats: "gwaspoly", "matrix", "vcf", "fitpoly", and "updog":
 - ***"gwaspoly" format:*** table with comma separated values (.csv). Each row contains the marker id, the chromosome, the position in the chromosome, and the following columns correspond to the marker data for each individual codified in the "ACGT" format (e.g., AATT, CCGG, AAAT, GGCG). An example follows:
 ```	 
 | Marker   | Chrom | Position | ACBrador | ACLPI175395 | ADGPI195204 | AdirondackBlue |
@@ -192,7 +223,7 @@ Currently, MultiGWAS accepts five genotype formats: "gwaspoly", "kmatrix", "vcf"
 | c2_21332 | 0     | 3499519  | TTCC     | CCCC        | CCCC        | TTCC           |
 ```
 
-- ***"kmatrix" format:*** table with comma separated values (.csv). Each ro contains the marker id and the marker data for each individual codified in a numeric format (e.g. 0,1,2,3,4). An example follows:
+- ***"matrix" format:*** table with comma separated values (.csv). Each ro contains the marker id and the marker data for each individual codified in a numeric format (e.g. 0,1,2,3,4). An example follows:
  
 ```
 | Marker   | ACBrador | ACLPI175395 | ADGPI195204 | AdirondackBlue | 
@@ -254,7 +285,7 @@ The phenotype file is formatted as a table separated by commas with the names of
 ```
 
 ### "mapFile"
-This file contains the markers information and it is an an *optional* file only needed when the genotype is numeric, as in the case of  "kmatrix" and "fitpoly" formats. The file contains a table with separated column values (.csv) with the following information for each marker: marker name, reference allele, alternate allele, chromosome, and position in the chromosome. An example follows:
+This file contains the markers information and it is an an *optional* file only needed when the genotype is numeric, as in the case of  "matrix" and "fitpoly" formats. The file contains a table with separated column values (.csv) with the following information for each marker: marker name, reference allele, alternate allele, chromosome, and position in the chromosome. An example follows:
 ```
 | Markers  | Ref | Alt | Chrom | Position |
 |----------|-----|-----|-------|----------|
@@ -268,7 +299,7 @@ This file contains the markers information and it is an an *optional* file only 
 
 # Considerations
 ## Implementation
-Most of the code uses the R language. However, some scripts that calling the GWAS tools are writing in bash. The version of the four tools are GWASpoly 1.3 (R library), SHEsis 1.0 (binary program), PLINK 1.9 and 2.0 (binary programs), and TASSEL 5.0 (Java packages). PLINK 1.9 is used for GWAS analysis (association between SNPs and quantitative traits), and PLINK 2.0 is used to account for cryptic relatedness (estimating kinship coefficientes).
+MultiGWAS is implemented in the R language.  However, some scripts that calling the GWAS tools are writing in bash. The version of the four tools are GWASpoly 1.3 (R library), SHEsis 1.0 (binary program), GAPIT 3.0, and TASSEL 5.0 (Java packages). 
 
 ## Number of SNPs in Manhattan and QQ plots
 The Manhattan and QQ plots for the different GWAS tools show a different number of markers (SNPs). Two reasons explain this pattern. First, the GWASpoly software uses four models for the marker effect (i.e., additive, general, simplex dominance, and duplex dominance). Therefore,  the plots show the SNPs four times, one for each model. Second, MultiGWAS is using scores instead of raw p-values, and scores are the -log10(p) results. So, when p-values are high, the scores have a negative value, and because the y-axes in the plot start in zero, they are not shown.

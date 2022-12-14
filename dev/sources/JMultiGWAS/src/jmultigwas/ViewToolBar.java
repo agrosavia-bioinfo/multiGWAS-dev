@@ -25,7 +25,7 @@ public class ViewToolBar extends javax.swing.JPanel {
     
     public void setTestMode (boolean testMode) {
         if (testMode) {
-            cboxGwaspoly.setSelected (false);
+            cboxGapit.setSelected (false);
             cboxShesis.setSelected (false);
             cboxTassel.setSelected (false);
         }
@@ -37,8 +37,8 @@ public class ViewToolBar extends javax.swing.JPanel {
                 tools += "GWASpoly ";
         if (cboxShesis.isSelected())
                 tools += "SHEsis ";
-        if (cboxPlink.isSelected())
-                tools += "PLINK ";
+        if (cboxGapit.isSelected())
+                tools += "GAPIT ";
         if (cboxTassel.isSelected())
                 tools += "TASSEL ";
         return (tools);
@@ -69,7 +69,7 @@ public class ViewToolBar extends javax.swing.JPanel {
         subpanelTools = new javax.swing.JPanel();
         cboxGwaspoly = new javax.swing.JCheckBox();
         cboxShesis = new javax.swing.JCheckBox();
-        cboxPlink = new javax.swing.JCheckBox();
+        cboxGapit = new javax.swing.JCheckBox();
         cboxTassel = new javax.swing.JCheckBox();
         panelGeneAction = new javax.swing.JPanel();
         labelGeneAction = new javax.swing.JLabel();
@@ -118,9 +118,9 @@ public class ViewToolBar extends javax.swing.JPanel {
         cboxShesis.setText("SHEsis");
         subpanelTools.add(cboxShesis);
 
-        cboxPlink.setSelected(true);
-        cboxPlink.setText("GAPIT");
-        subpanelTools.add(cboxPlink);
+        cboxGapit.setSelected(true);
+        cboxGapit.setText("GAPIT");
+        subpanelTools.add(cboxGapit);
 
         cboxTassel.setSelected(true);
         cboxTassel.setText("TASSEL");
@@ -144,6 +144,11 @@ public class ViewToolBar extends javax.swing.JPanel {
         buttonGroupGeneAction.add(radioButtonAdditiveGA);
         radioButtonAdditiveGA.setSelected(true);
         radioButtonAdditiveGA.setText("Additive");
+        radioButtonAdditiveGA.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                radioButtonAdditiveGAActionPerformed(evt);
+            }
+        });
         subpanelGeneAction.add(radioButtonAdditiveGA);
 
         buttonGroupGeneAction.add(radioButtonDominantGA);
@@ -168,7 +173,7 @@ public class ViewToolBar extends javax.swing.JPanel {
             }
         });
         panelRun.add(buttonRun);
-        buttonRun.setBounds(40, 40, 70, 24);
+        buttonRun.setBounds(40, 40, 70, 25);
 
         panelTools.add(panelRun);
 
@@ -193,12 +198,16 @@ public class ViewToolBar extends javax.swing.JPanel {
         controller.onRunApplication();
     }//GEN-LAST:event_buttonRunActionPerformed
 
+    private void radioButtonAdditiveGAActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_radioButtonAdditiveGAActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_radioButtonAdditiveGAActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroupGeneAction;
     private javax.swing.JButton buttonRun;
+    private javax.swing.JCheckBox cboxGapit;
     private javax.swing.JCheckBox cboxGwaspoly;
-    private javax.swing.JCheckBox cboxPlink;
     private javax.swing.JCheckBox cboxShesis;
     private javax.swing.JCheckBox cboxTassel;
     private javax.swing.JButton jButton1;

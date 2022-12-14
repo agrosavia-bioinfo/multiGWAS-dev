@@ -23,6 +23,11 @@ main <- function () {
 # create SNP profiles for a list of SNPS
 #----------------------------------------------------------
 createHeatmapForSNPList <- function (outputDir, genoFileACGT, genoFileNUM, phenoFile, snpList, ploidy) {
+	if (length (snpList)==0) {
+		msgmsg ("There are no SNPs for heatmaps...")
+		return (NA)
+	}
+
 	outName = paste0 (outputDir, "/out-SNPProfile") 
 
 	genotypeACGT    <- read.csv (genoFileACGT, na.strings = "NA", dec = ".", strip.white = TRUE, check.names=F )
@@ -52,11 +57,11 @@ createHeatmapForSNP <- function (outputDir, genotypeACGT, genotypeNUMERIC, pheno
 	trait       = colnames (phenotype) [2]
 
 	# Get samples for marker in both matrices: Numeric and ACGT
-	samplesMarker          = t(genotypeNUMERIC[genotypeNUMERIC[,1]==snpId,])
-	samplesMarkerMatrixNUM = as.matrix(samplesMarker[-1:-3,])
+	samplesMarkerNUM       = t(genotypeNUMERIC[genotypeNUMERIC[,1]==snpId,])
+	samplesMarkerMatrixNUM = as.matrix(samplesMarkerNUM[-1,])
 
-	samplesMarker           = t(genotypeACGT[genotypeACGT[,1]==snpId,])
-	samplesMarkerMatrixACGT = as.matrix(samplesMarker[-1:-3,])
+	samplesMarkerACGT       = t(genotypeACGT[genotypeACGT[,1]==snpId,])
+	samplesMarkerMatrixACGT = as.matrix(samplesMarkerACGT[-1:-3,])
 
 	# Count genotype types
 	one.hot<-function(sqnce, alphabet){

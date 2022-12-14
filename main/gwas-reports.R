@@ -4,6 +4,7 @@
 # AUTHOR : Luis Garreta (lgarreta@agrosavia.co)
 # DATA   : feb/2020
 # LOG: 
+#	r5.3: Fixed get unique models in qqMGWAS
 #	r5.2: Fixed unused factors in gwasResults
 #	r5.1: Fixed chord diagram when no shared SNPs
 #	r5.0: Heuristic to select best gene action model
@@ -41,18 +42,21 @@ main <- function () {
 	source (paste0(HOME,"/main/gwas-preprocessing.R")) 
 
 	params = list ()
-	params$inputDir        = "out/"
-	params$genotypeFile    = "out/filtered-gwasp4-genotype.tbl"
-	params$phenotypeFile   = "out/filtered-gwasp4-phenotype.tbl"
-	params$genotypeNumFile = "out/filtered-gwasp4-genotype-NUM.csv"
+	params$inputDir         = "out/"
+	params$genotypeFile     = "out/filtered-gwasp4-genotype.tbl"
+	params$phenotypeFile    = "out/filtered-gwasp4-phenotype.tbl"
+	params$genotypeNumFile  = "out/filtered-gwasp4-genotype-NUM.csv"
 	params$outputDir        = "out/"
-	params$reportDir       = "report/"
-	params$gwasModel       = "naive"
-	params$nBest           = 10
-	params$ploidy          = 4
-	params$geneAction      = "additive"
+	params$reportDir        = "report/"
+	params$gwasModel        = "naive"
+	params$nBest            = 10
+	params$ploidy           = 4
+	params$geneAction       = "additive"
+	params$nonModelOrganism = FALSE
 
-	tools1 = list(list (tool="GWASpoly", scoresFile="out/tool-GWASpoly-scores-naive.csv")) 
+	tools1 = list(list (tool="GWASpoly", 
+						scoresFile="out/tool-GWASpoly-scores-Naive.csv",
+						scores=read.csv ("out/tool-GWASpoly-scores-Naive.csv", sep="\t"))) 
 
 	tools2 = list(list (tool="GWASpoly", scoresFile="out/tool-GWASpoly-scores-full.csv"), 
 				  list (tool="SHEsis", scoresFile="out/tool-SHEsis-scores-full.csv"))
@@ -68,8 +72,7 @@ main <- function () {
 
 	listOfResultsFile = tools1
 
-	print (params)
-	createReports (tools1, params)
+	res = createReports (tools1, params)
 }
 
 #-------------------------------------------------------------
@@ -81,7 +84,7 @@ main <- function () {
 #	5- 1 multiplot of 4x4 manhattan and QQ plots
 #-------------------------------------------------------------
 #-------------------------------------------------------------
-createReports <- function (results, params) {
+createReports <- function (listOfResults, params) {
 	inputDir  = params$outputDir
 	outputDir = params$reportDir
 
@@ -91,39 +94,97 @@ createReports <- function (results, params) {
 	# Define filenames for outputs
 	fileBestScores        = paste0 (outputDir,  "/out-multiGWAS-scoresTable-best.scores")
 	fileSignificantScores = paste0 (outputDir,  "/out-multiGWAS-scoresTable-significants.scores")
-	fileSNpsHighLD        = paste0 (outputDir, "/out-multiGWAS-SNPsHighLD-table.csv")
+	SNPsHighLDFile        = paste0 ("out", "/out-SNPsHighLD-Table.csv")
 
 	msgmsg ("Writing input config parameters...")
 	config = writeConfigurationParameters (inputDir, outputDir)
 
-	if (length (results)==0) {
+	if (length (listOfResults)==0) {
 		msgError ("WARNING: No result files for any tool.\n
 				  Check config file parameters (e.g. tools, geneAction, gwasModel)")
 		quit ()
 	}
+	#---- Get all scores from all tools ----
+	allScores = getAllScores (listOfResults)
+	allScoresTable  = allScores$all
+	allGScoresTable = allScores$gscore
+	#---------------------------------------
 
-	snpTables   = markersSummaryTableLD (results, params)
+	snpTables   = markersSummaryTableLD (listOfResults, params)
 
 	msgmsg ("Writing Venn diagram for best and significant SNPs...")
-	commonBest = createVennDiagrams (results, snpTables, params$gwasModel, outputDir, params) 
-
+	commonBest = createVennDiagrams (listOfResults, snpTables, params$gwasModel, outputDir, params) 
 	msgmsg ("Writing Manhattan and QQ plots...")
-	createManhattanPlots (results, commonBest, snpTables, params$nBest, params$geneAction, outputDir)
-
-	# Create heat maps
+	createManhattanPlots (listOfResults, commonBest, snpTables, params$nBest, params$geneAction, outputDir, params)
 	msgmsg ("Creating heatmaps for best ranked SNPs...")
 	createHeatmapForSNPList (outputDir, params$genotypeFile, params$genotypeNumFile, params$phenotypeFile, 
 							 commonBest, params$ploidy)
 
-	# Create chord diagrams
 	msgmsg ("Creating chord diagrams for chromosome vs SNPs...")
 	createChordDiagramSharedSNPs (fileBestScores)
 
 	# Create table for SNPs in high LD
-	createSNPsHighLDOutputs (params$SNPsHighLDFile, outputDir)
+	createSNPsHighLDOutputs (SNPsHighLDFile, outputDir)
 
 	# Call to rmarkdown report
 	createMarkdownReport (config)
+
+	return (list (best=snpTables$best, all=allScoresTable, gscore=allGScoresTable))
+}
+
+#-------------------------------------------------------------
+# Get all scores and all GScores from MultiGWAS list of results
+#-------------------------------------------------------------
+getAllScores <- function (listOfResults){
+	allScoresList = list()
+	for (res in listOfResults) {
+		scores = data.frame (TOOL=res$tool, res$scores)
+		allScoresList = append (allScoresList, list(scores))
+	}
+	allScores = do.call ("rbind", allScoresList)
+	allScores = cbind (allScores, SIGNIFICANCE=allScores$DIFF>0)
+	allScores$DIFF=NULL
+	names (allScores)[names(allScores)=="Marker"] = "SNP"
+	allGlobalScores = scoreMarkers (allScores)
+
+	return (list(all=allScores, gscore=allGlobalScores))
+}
+#-------------------------------------------------------------
+# Calculates an own score (AgroSCORE) for each SNPs and sort SNPs 
+# according to this score. The score takes into account three 
+# elements: Genomic Control close to 1, replicability of SNPs 
+# between the four MultiGWAS tools, and SNPS significance 
+# (p-value > threshold).
+#-------------------------------------------------------------
+scoreMarkers <- function (scores) {
+	# Replicability score: Count of SNPs between all SNPs
+	scoresRepl  = scores %>% add_count (SNP, sort=F, name="ScoresRepl");
+	valuesRepl  = scoresRepl$ScoresRepl
+
+	# Significance score: 1 for significants, 0 otherwise
+	valuesSign   = ifelse (scores$SIGNIFICANCE, 1,0)
+	scoresSign   = cbind (scoresRepl, ScoresSign=valuesSign)
+
+	# GC score: Measures closenes of Genomic Control (GC) to 1
+	valuesGC     = 1 - abs (1-scores$GC)
+	scoresGC     = cbind (scoresSign, ScoresGC=valuesGC)
+
+	# Difference score: Measures difference between threshold and Score 
+	# It's not useful if it isn't normalized by each tool
+	#valuesDiff   = scores$SCORE - scores$THRESHOLD
+	#scoresDiff   = cbind (scoresGC, ScoreDiff=valuesDiff)
+
+	sc = scoresGC
+	globalScore = 0.8*sc[,"ScoresGC",drop=F] + 0.1*sc[,"ScoresSign",drop=F] + 0.1*sc[,"ScoresRepl", drop=F]
+
+	gscoreTable = cbind (GSCORE=globalScore[,1], scoresGC)
+	gscoreTable = gscoreTable %>% arrange (desc(GSCORE))
+
+	gscoreTable$ScoresGC=NULL
+	gscoreTable$ScoresSign=NULL
+	gscoreTable$ScoresRepl=NULL
+
+	return (gscoreTable)
 }
 
 #-------------------------------------------------------------
@@ -134,14 +195,14 @@ createVennDiagrams <- function (results, snpTables, gwasModel, outputDir, params
 	fileVennDiagramSign  = paste0 (outputDir, "/out-multiGWAS-vennDiagram-significants")
 	fileVennDiagramLD    = paste0 (outputDir, "/out-multiGWAS-vennDiagram-LD")
 
-
 	commonBest = markersVennDiagramsLD (results, snpTables$best, gwasModel, "Best", fileVennDiagramBest)
 	commonSign = markersVennDiagramsLD (results, snpTables$significants, gwasModel, "Significants", fileVennDiagramSign)
 	
 	# Check if there is any "scoresLDFile" in results
+	msgmsg ("Checking if there is any 'scoresLDFile' in results...")
 	if (any (sapply (results, function (res) !is.null (res$scoresLDFile)))) {
+		msgmsg ("scoresLDFile found...")
 		snpTables   = markersSummaryTableLD (results, params, LD=T)
-		view (snpTables$best)
 		commonLD   = markersVennDiagramsLD (results, snpTables$best, gwasModel, "Best", fileVennDiagramLD, LD=T)
 	}
 
@@ -151,30 +212,26 @@ createVennDiagrams <- function (results, snpTables, gwasModel, outputDir, params
 # By now, only copy table to report dir to show as knit table
 #-------------------------------------------------------------
 createSNPsHighLDOutputs <- function (SNPsHighLDFile, outputDir) {
-	if (is.null (SNPsHighLDFile))
+	if (file.exists (SNPsHighLDFile)==FALSE)
 		return()
 
 	msgmsg ("Copying table of SNPs in high LD...")
-	msgmsg (SNPsHighLDFile)
-	msgmsg (outputDir)
 	file.copy (SNPsHighLDFile, outputDir)
-
-
 }
 #-------------------------------------------------------------
 # Create manhattan plots for each tool
 #-------------------------------------------------------------
-createManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBest, geneAction, outputDir) {
+createManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBest, geneAction, outputDir, params) {
 	fileManhattanPlotPNG         = paste0 (outputDir, "/out-multiGWAS-manhattanQQ-plots.png")
 	fileManhattanPlotPDF         = paste0 (outputDir, "/out-multiGWAS-manhattanQQ-plots.pdf")
 
 	msgmsg ("Writing Manhattan and QQ plots...")
 	png (fileManhattanPlotPNG, width=11, height=15, units="in", res=90)
-	op=markersManhattanPlots (listOfResultsFile, commonBest, snpTables, nBest, geneAction)
+	op=markersManhattanPlots (listOfResultsFile, commonBest, snpTables, nBest, geneAction, params)
 	dev.off()
 
 	pdf (fileManhattanPlotPDF, width=11, height=15)
-	op=markersManhattanPlots (listOfResultsFile, commonBest, snpTables, nBest, geneAction)
+	op=markersManhattanPlots (listOfResultsFile, commonBest, snpTables, nBest, geneAction, params)
 	par (op)
 	dev.off()
 }
@@ -196,7 +253,7 @@ createMarkdownReport  <- function (params) {
 
 #------------------------------------------------------------------------
 #------------------------------------------------------------------------
-markersManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBest, geneAction) {
+markersManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBest, geneAction, params) {
 	op <- par(mfrow = c(4,2), mar=c(3.5,3.5,3,1), oma=c(0,0,0,0), mgp = c(2.2,1,0))
 	#op <- layout (matrix (c(1,1,2,3, 4:16), 4,4, byrow=T))#, widths=c(2,1), heights=c(2,1)))
 	for (res in listOfResultsFile) {
@@ -230,23 +287,8 @@ markersManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBe
 
 		bestSNPsTool     = unlist (dplyr::select (filter (snpTables$best, TOOL==tool), "SNP"))
 		sharedSNPs       = intersect (commonBest, bestSNPsTool)
-		colorsBlueOrange = c("blue4", "orange3")
-		ylims   = c (0, ceiling (signThresholdScore))
 
-		# Check if all chromosome names are numeric
-		anyNonNumericChrom <- function (chrs) {
-			suppressWarnings (any (is.na (as.numeric (chrs))))
-		}
-
-		# if non-numeric Chromosome names, convert to numeric using factors
-		chrs = as.character (gwasResults$CHR)
-		if  (anyNonNumericChrom (chrs)==TRUE) {
-			msgmsg ("!!!Mapping chromosome names to numbers (see 'out-mapped-chromosome-names.csv') file...")
-			chrs            = as.factor (chrs)
-			levels (chrs)   = 1:length (levels (chrs))
-			write.csv (data.frame (ORIGINAL_CHROM=gwasResults$CHR, NEW_CHROM=chrs), "out-mapped-chromosome-names.csv", quote=F, row.names=F)
-			gwasResults$CHR = as.numeric (chrs)
-		}
+		gwasResults$CHR = handleChromosomeNames (gwasResults$CHR, params)
 
 		names      = unlist (strsplit (basename (scoresFile), "[-|.]"))
 		mainTitle  = paste0 (names[2],"-", names [3])
@@ -259,20 +301,41 @@ markersManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBe
 
 		#datax = calculateInflationFactor (-log10 (gwasResults$P))
 		qqMGWAS (gwasResults, geneAction)
-		#qq (gwasResults$P)
-		#mtext (bquote(lambda[GC] == .(datax$delta)), side=3, line=-2, cex=0.7)
-		#title (bquote(lambda[GC] == .(data$delta)))
 	}
-	#par (op)
-	#dev.off()
 	return (op)
 }
 
 #-------------------------------------------------------------
+# Check chromosome names and replace by numbers
+#-------------------------------------------------------------
+handleChromosomeNames <- function (chrNames, params) {
+	# Check if non-model genotype (chromosomes renamed with "contig" prefix
+	if (params$nonModelOrganism==TRUE) {
+		chrs = gsub ("contig","", chrNames)
+	}else {
+		# Check if all chromosome names are numeric
+		anyNonNumericChrom <- function (chrs) {
+			suppressWarnings (any (is.na (as.numeric (chrs))))
+		}
+
+		# if non-numeric Chromosome names, convert to numeric using factors
+		chrs = as.character (chrNames)
+		if  (anyNonNumericChrom (chrs)==TRUE) {
+			msgmsg ("!!!Mapping chromosome names to numbers (see 'out-mapped-chromosome-names.csv') file...")
+			chrs            = as.factor (chrs)
+			levels (chrs)   = 1:length (levels (chrs))
+			write.csv (data.frame (ORIGINAL_CHROM=chrNames, NEW_CHROM=chrs), "out-mapped-chromosome-names.csv", quote=F, row.names=F)
+		}
+	}
+	chrs = as.numeric (chrs)
+	return (chrs)
+}
+#-------------------------------------------------------------
 # QQ plot
 #-------------------------------------------------------------
 qqMGWAS <- function(gwasResults, geneAction) {
-	models = levels (gwasResults$MODEL)
+	models = unique (gwasResults$MODEL)
+
 	#---- local fun -----
 	qqValues <- function (pValues) {
 		scores = -log10 (pValues)
@@ -441,15 +504,12 @@ markersSummaryTableLD <- function (results, params, LD=FALSE) {
 
 	for (res in results) {
 		TOOL       = res$tool
-		message (">>>> ", TOOL )
-		print (res$scoresLDFile)
-
 		# Select type of scoresFile
 		scoresFile = if (LD==TRUE) res$scoresLDFile else res$scoresFile 
 
 		if (!is.null (scoresFile)) {
+			msgmsg ("Processing LD scores file: ", scoresFile)
 			data       = read.table (file=scoresFile, header=T, stringsAsFactors=F)
-			#data       = selectBestModel (data, nBest, TOOL, geneAction)
 			MODEL        = data$MODEL;
 			GC           = data$GC
 			SNP          = data$Marker
@@ -469,13 +529,13 @@ markersSummaryTableLD <- function (results, params, LD=FALSE) {
 		}
 	}
 
-	summaryBest = summaryTable [which(!is.na(summaryTable$SIGNIFICANCE)),]
+	summaryBest         = summaryTable [which(!is.na(summaryTable$SIGNIFICANCE)),]
 	summarySignificants = summaryBest %>% filter (SIGNIFICANCE%in%T) 
 
 	# Only write general tables not LD
 	if (LD == FALSE) {
 		msgmsg ("Writing tables with best ranked and signficative SNPs... ")
-		fileBestScores          = paste0 (params$reportDir,  "/out-multiGWAS-scoresTable-best.scores")
+		fileBestScores        = paste0 (params$reportDir,  "/out-multiGWAS-scoresTable-best.scores")
 		fileSignificantScores = paste0 (params$reportDir,  "/out-multiGWAS-scoresTable-significants.scores")
 		write.table (file=fileBestScores, summaryBest, row.names=F,quote=F, sep="\t")
 		write.table (file=fileSignificantScores, summarySignificants, row.names=F,quote=F, sep="\t")
@@ -567,19 +627,22 @@ writeConfigurationParameters <- function (inputDir, outputDir) {
 	params     = yaml.load_file (paramsFile, merge.precedence="order") 
 
 	configDF = data.frame (PARAMETER=character(), VALUE=character ())
-	configDF = rbind  (configDF, data.frame (PARAMETER="Ploidy (4 or 2)", VALUE=toString (params$ploidy)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="Genotype filename", VALUE=toString (params$genotypeFile)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="Phenotype filename", VALUE=toString (params$phenotypeFile)))
+	configDF = rbind  (configDF, data.frame (PARAMETER="Genotype format (gwaspoly, matrix, vcf, updog, fitpoly)", VALUE=toString (params$genotypeFormat)))
+	configDF = rbind  (configDF, data.frame (PARAMETER="Map filename", VALUE=toString (params$mapFile)))
+	configDF = rbind  (configDF, data.frame (PARAMETER="Ploidy (4 or 2)", VALUE=toString (params$ploidy)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="Significance level (Genome-wide significance level)", VALUE=toString (params$significanceLevel)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="Correction method (Bonferroni or FDR)", VALUE=toString (params$correctionMethod)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="GWAS model (Full or Naive)", VALUE=toString (params$gwasModel)))
-	configDF = rbind  (configDF, data.frame (PARAMETER="nBest (Number of best-ranked SNPs to be reported)", VALUE=toString (params$nBest)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="Filtering (TRUE or FALSE)", VALUE=toString (params$filtering)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="MIND Filter (Individual with missing genotype)", VALUE=toString (params$MIND)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="GENO Filter (SNPs with missing genotype)", VALUE=toString (params$GENO)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="MAF Filter (Minor allele frequency)", VALUE=toString (params$MAF)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="HWE Filter (Hardy-Weinberg test)", VALUE=toString (params$HWE)))
+	configDF = rbind  (configDF, data.frame (PARAMETER="R2 LD (Linkage disequilibrium threshold)", VALUE=toString (params$R2)))
 	configDF = rbind  (configDF, data.frame (PARAMETER="GWAS Tools", VALUE=toString (params$tools)))
+	configDF = rbind  (configDF, data.frame (PARAMETER="nBest (Number of top SNPs to be reported)", VALUE=toString (params$nBest)))
 
 	outName = paste0(outputDir, "/out-multiGWAS-inputParameters.tbl")
 	write.table (file=outName, configDF, quote=F, sep="\t", row.names=F)
@@ -626,7 +689,7 @@ createChordDiagramSharedSNPs <- function (scoresFile) {
 	getSharedSNPsFromFile <- function (scoresFile, N) {
 		scores = read.table (file=scoresFile, header=T, sep="\t"); 
 		summary = data.frame (add_count (scores, SNP, sort=T)); 
-		sharedDups = summary [summary$n > 1 & summary$SIGNIFICANCE==T,]
+		sharedDups = summary [summary$n > 1 && summary$SIGNIFICANCE==T,]
 		shared = sharedDups [!duplicated (sharedDups$SNP),]
 		return (shared)
 	}
@@ -733,6 +796,6 @@ createDir <- function (newDir) {
 # Call to main function (first lines)
 #-------------------------------------------------------------
 
-#source ("lglib06.R")
+#source ("lglib14.R")
 #main ()
 

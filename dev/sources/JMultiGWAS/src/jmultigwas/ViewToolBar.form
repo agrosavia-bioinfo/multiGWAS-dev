@@ -133,7 +133,7 @@
                             <Property name="text" type="java.lang.String" value="SHEsis"/>
                           </Properties>
                         </Component>
-                        <Component class="javax.swing.JCheckBox" name="cboxPlink">
+                        <Component class="javax.swing.JCheckBox" name="cboxGapit">
                           <Properties>
                             <Property name="selected" type="boolean" value="true"/>
                             <Property name="text" type="java.lang.String" value="GAPIT"/>
@@ -199,6 +199,9 @@
                             <Property name="selected" type="boolean" value="true"/>
                             <Property name="text" type="java.lang.String" value="Additive"/>
                           </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="radioButtonAdditiveGAActionPerformed"/>
+                          </Events>
                         </Component>
                         <Component class="javax.swing.JRadioButton" name="radioButtonDominantGA">
                           <Properties>
