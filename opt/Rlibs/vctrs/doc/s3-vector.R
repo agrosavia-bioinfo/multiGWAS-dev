@@ -256,7 +256,7 @@ new_rational <- function(n = integer(), d = integer()) {
 }
 
 ## -----------------------------------------------------------------------------
-rational <- function(n, d) {
+rational <- function(n = integer(), d = integer()) {
   c(n, d) %<-% vec_cast_common(n, d, .to = integer())
   c(n, d) %<-% vec_recycle_common(n, d)
 
@@ -272,6 +272,16 @@ length(x)
 ## -----------------------------------------------------------------------------
 fields(x)
 field(x, "n")
+
+## ---- error = TRUE------------------------------------------------------------
+x
+
+str(x)
+
+## -----------------------------------------------------------------------------
+vec_data(x)
+
+str(vec_data(x))
 
 ## -----------------------------------------------------------------------------
 format.vctrs_rational <- function(x, ...) {
@@ -359,34 +369,38 @@ x == rational(1, 1)
 unique(x)
 
 ## -----------------------------------------------------------------------------
-sort(x)
+rational(1, 2) < rational(2, 3)
+rational(2, 4) < rational(2, 3)
 
 ## -----------------------------------------------------------------------------
 vec_proxy_compare.vctrs_rational <- function(x, ...) {
   field(x, "n") / field(x, "d")
 }
 
+rational(2, 4) < rational(2, 3)
+
+## -----------------------------------------------------------------------------
 sort(x)
 
 ## -----------------------------------------------------------------------------
-new_poly <- function(x) {
-  new_list_of(x, ptype = integer(), class = "vctrs_poly")
-}
-
 poly <- function(...) {
-  x <- list(...)
-  x <- lapply(x, vec_cast, integer())
+  x <- vec_cast_common(..., .to = integer())
   new_poly(x)
 }
+new_poly <- function(x) {
+  new_list_of(x, ptype = integer(), class = "vctrs_poly_list")
+}
 
-vec_ptype_full.vctrs_poly <- function(x, ...) "polynomial"
-vec_ptype_abbr.vctrs_poly <- function(x, ...) "poly"
+vec_ptype_full.vctrs_poly_list <- function(x, ...) "polynomial"
+vec_ptype_abbr.vctrs_poly_list <- function(x, ...) "poly"
 
-format.vctrs_poly <- function(x, ...) {
+format.vctrs_poly_list <- function(x, ...) {
   format_one <- function(x) {
     if (length(x) == 0) {
       return("")
-    } else if (length(x) == 1) {
+    }
+
+    if (length(x) == 1) {
       format(x)
     } else {
       suffix <- c(paste0("\u22C5x^", seq(length(x) - 1, 1)), "")
@@ -395,16 +409,17 @@ format.vctrs_poly <- function(x, ...) {
       paste0(out, collapse = " + ")
     }
   }
+
   vapply(x, format_one, character(1))
 }
 
-obj_print_data.vctrs_poly <- function(x, ...) {
-  if (length(x) == 0)
-    return()
-  print(format(x), quote = FALSE)
+obj_print_data.vctrs_poly_list <- function(x, ...) {
+  if (length(x) != 0) {
+    print(format(x), quote = FALSE)
+  }
 }
 
-p <- poly(1, c(1, 0, 1), c(1, 0, 0, 0, 2))
+p <- poly(1, c(1, 0, 0, 0, 2), c(1, 0, 1))
 p
 
 ## -----------------------------------------------------------------------------
@@ -413,14 +428,39 @@ p[2]
 p[[2]]
 
 ## -----------------------------------------------------------------------------
+vec_is_list(p)
+
+## -----------------------------------------------------------------------------
+poly <- function(...) {
+  x <- vec_cast_common(..., .to = integer())
+  x <- new_poly(x)
+  new_rcrd(list(data = x), class = "vctrs_poly")
+}
+format.vctrs_poly <- function(x, ...) {
+  format(field(x, "data"))
+}
+
+## -----------------------------------------------------------------------------
+p <- poly(1, c(1, 0, 0, 0, 2), c(1, 0, 1))
+p
+
+## -----------------------------------------------------------------------------
+vec_is_list(p)
+
+## -----------------------------------------------------------------------------
+p[[2]]
+
+## -----------------------------------------------------------------------------
 p == poly(c(1, 0, 1))
 
 ## ---- error = TRUE------------------------------------------------------------
-sort(p)
+p < p[2]
 
 ## -----------------------------------------------------------------------------
 vec_proxy_compare.vctrs_poly <- function(x, ...) {
-  x_raw <- vec_data(x)
+  # Get the list inside the record vector
+  x_raw <- vec_data(field(x, "data"))
+
   # First figure out the maximum length
   n <- max(vapply(x_raw, length, integer(1)))
 
@@ -431,8 +471,18 @@ vec_proxy_compare.vctrs_poly <- function(x, ...) {
   as.data.frame(do.call(rbind, full))
 }
 
-sort(poly(3, 2, 1))
-sort(poly(1, c(1, 0, 0), c(1, 0)))
+p < p[2]
+
+## -----------------------------------------------------------------------------
+sort(p)
+sort(p[c(1:3, 1:2)])
+
+## -----------------------------------------------------------------------------
+vec_proxy_order.vctrs_poly <- function(x, ...) {
+  vec_proxy_compare(x, ...)
+}
+
+sort(p)
 
 ## -----------------------------------------------------------------------------
 vec_arith.MYCLASS <- function(op, x, y, ...) {
@@ -597,20 +647,44 @@ is_percent <- function(x) {
 #    "prcnt"
 #  }
 
-## -----------------------------------------------------------------------------
-#' @export
-vec_ptype2.vctrs_percent.vctrs_percent <- function(x, y, ...) new_percent()
-#' @export
-vec_ptype2.double.vctrs_percent <- function(x, y, ...) double()
-
-## ----eval = FALSE-------------------------------------------------------------
+## ---- eval = FALSE------------------------------------------------------------
+#  #' @export
+#  vec_ptype2.vctrs_percent.vctrs_percent <- function(x, y, ...) new_percent()
+#  #' @export
+#  vec_ptype2.double.vctrs_percent <- function(x, y, ...) double()
+#  
 #  #' @export
 #  vec_cast.pizza_percent.pizza_percent <- function(x, to, ...) x
 #  #' @export
 #  vec_cast.pizza_percent.double <- function(x, to, ...) percent(x)
-#  #' @method vec_cast.double pizza_percent
 #  #' @export
 #  vec_cast.double.pizza_percent <- function(x, to, ...) vec_data(x)
+
+## ---- eval=FALSE--------------------------------------------------------------
+#  #' @export
+#  #' @method vec_arith my_type
+#  vec_arith.my_type <- function(op, x, y, ...) {
+#    UseMethod("vec_arith.my_type", y)
+#  }
+
+## ---- eval=FALSE--------------------------------------------------------------
+#  #' @export
+#  #' @method vec_arith.my_type my_type
+#  vec_arith.my_type.my_type <- function(op, x, y, ...) {
+#    # implementation here
+#  }
+#  
+#  #' @export
+#  #' @method vec_arith.my_type integer
+#  vec_arith.my_type.integer <- function(op, x, y, ...) {
+#    # implementation here
+#  }
+#  
+#  #' @export
+#  #' @method vec_arith.integer my_type
+#  vec_arith.integer.my_type <- function(op, x, y, ...) {
+#    # implementation here
+#  }
 
 ## ---- eval = FALSE------------------------------------------------------------
 #  expect_error(vec_c(1, "a"), class = "vctrs_error_incompatible_type")

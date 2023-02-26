@@ -39,6 +39,7 @@ comp_dens_conv.unimix   density of convolution of each component of a
 comp_mean               Generic function of calculating the first
                         moment of components of the mixture
 comp_mean.normalmix     comp_mean.normalmix
+comp_mean.tnormalmix    comp_mean.tnormalmix
 comp_mean2              Generic function of calculating the second
                         moment of components of the mixture
 comp_postmean           comp_postmean
@@ -48,6 +49,7 @@ comp_postsd             comp_postsd
 comp_sd                 Generic function to extract the standard
                         deviations of components of the mixture
 comp_sd.normalmix       comp_sd.normalmix
+comp_sd.tnormalmix      comp_sd.normalmix
 compute_lfsr            Function to compute the local false sign rate
 cxxMixSquarem           Brief description of function.
 dens                    Find density at y, a generic function
@@ -126,6 +128,7 @@ qval.from.lfdr          Function to compute q values from local false
 set_data                Takes raw data and sets up data object for use
                         by ash
 summary.ash             Summary method for ash object
+tnormalmix              Constructor for tnormalmix class
 unimix                  Constructor for unimix class
 vcdf_post               vcdf_post
 w_mixEM                 Estimate mixture proportions of a mixture model

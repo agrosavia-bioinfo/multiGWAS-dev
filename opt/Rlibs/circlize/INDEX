@@ -54,6 +54,8 @@ circos.heatmap.link     Draw a link between two matrix rows in the
                         circular heatmap
 circos.info             Get information of the circular plot
 circos.initialize       Initialize the circular layout
+circos.initializeCircularGenome
+                        Initialize a layout for circular genome
 circos.initializeWithIdeogram
                         Initialize the circular layout with an ideogram
 circos.labels           Add a label track

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -534,7 +536,7 @@ arma_ostream::print(std::ostream& o, const Cube<eT>& x, const bool modify)
 
 
 //! Print a field to the specified stream
-//! Assumes type oT can be printed, i.e. oT has std::ostream& operator<< (std::ostream&, const oT&) 
+//! Assumes type oT can be printed, ie. oT has std::ostream& operator<< (std::ostream&, const oT&) 
 template<typename oT>
 arma_cold
 inline
@@ -608,7 +610,7 @@ arma_ostream::print(std::ostream& o, const field<oT>& x)
 
 
 //! Print a subfield to the specified stream
-//! Assumes type oT can be printed, i.e. oT has std::ostream& operator<< (std::ostream&, const oT&) 
+//! Assumes type oT can be printed, ie. oT has std::ostream& operator<< (std::ostream&, const oT&) 
 template<typename oT>
 arma_cold
 inline
@@ -940,7 +942,7 @@ arma_ostream::brief_print(std::ostream& o, const Mat<eT>& m, const bool print_si
   
   if( (print_row_ellipsis == true) && (print_col_ellipsis == true) )
     {
-    Mat<eT> X(4,4);
+    Mat<eT> X(4, 4, arma_nozeros_indicator());
     
     X( span(0,2), span(0,2) ) = m( span(0,2),  span(0,2)  );  // top left submatrix
     X( 3,         span(0,2) ) = m( m.n_rows-1, span(0,2)  );  // truncated last row
@@ -997,7 +999,7 @@ arma_ostream::brief_print(std::ostream& o, const Mat<eT>& m, const bool print_si
   
   if( (print_row_ellipsis == true) && (print_col_ellipsis == false) )
     {
-    Mat<eT> X(4, m.n_cols);
+    Mat<eT> X(4, m.n_cols, arma_nozeros_indicator());
     
     X( span(0,2), span::all ) = m( span(0,2),  span::all );  // top
     X( 3,         span::all ) = m( m.n_rows-1, span::all );  // bottom
@@ -1039,7 +1041,7 @@ arma_ostream::brief_print(std::ostream& o, const Mat<eT>& m, const bool print_si
   
   if( (print_row_ellipsis == false) && (print_col_ellipsis == true) )
     {
-    Mat<eT> X(m.n_rows, 4);
+    Mat<eT> X(m.n_rows, 4, arma_nozeros_indicator());
     
     X( span::all, span(0,2) ) = m( span::all, span(0,2)  );  // left
     X( span::all, 3         ) = m( span::all, m.n_cols-1 );  // right

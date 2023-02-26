@@ -1,66 +1,31 @@
 #!/usr/bin/Rscript
 #
-# Create multiGWAS profile according to current directory
-# 
+# Install R libraries
+MULTIGWAS_HOME = Sys.getenv ("MULTIGWAS_HOME")
 
-# Remove previous installations
-system ("sed '/multiGWAS/d' -i ~/.bashrc")
-
-# Start installation
-MULTIGWAS_HOME = strsplit (getwd (), "/install")[[1]][1]
-message ("MULTIGWAS_HOME=",MULTIGWAS_HOME)
-
-message ("Creating multiGWAS profile...")
-sink ("multiGWAS_profile.sh", append=F)
-writeLines ("\n#------------------- multiGWAS.R profile ---------------------")
-writeLines (paste0 ("export MULTIGWAS_HOME=", MULTIGWAS_HOME))
-writeLines ("MULTIGWAS_TOOLS=$MULTIGWAS_HOME/opt/tools")
-writeLines ("MULTIGWAS_MAIN=$MULTIGWAS_HOME/main")
-writeLines ("export PATH=$PATH:$MULTIGWAS_TOOLS:$MULTIGWAS_MAIN")
-sink()
-
-# Write into .bashrc
-profileFile = paste0 (path.expand ("~"), "/.bashrc")
-sink (profileFile, append=T)
-writeLines ("\n#------------------- multiGWAS.R tool profile ---------------------")
-writeLines (paste0 (". ", MULTIGWAS_HOME, "/multiGWAS_profile.sh"))
-sink ()
-
-message ("\nMultiGWAS is ready to use, right after installed!\n")
-
-#---------------------- # Install R libraries----------------------------------
 libPath    = paste0  (MULTIGWAS_HOME, "/opt/Rlibs")
-libSources = paste0  (MULTIGWAS_HOME, "/install/repo/src/contrib")
-libRepo    = sprintf ("file://%s/install/repo", MULTIGWAS_HOME)
+libRepo    = paste0  (MULTIGWAS_HOME, "/install/repo")
 if (!dir.exists (libPath))
 	dir.create (libPath)
 
 .libPaths (libPath)
 message ("\n\nInstalling R libraries for MultiGWAS into: ", libPath)
 
-
-multigwas_packages = c("rrBLUP", "parallel","config","dplyr", "stringi","qqman", "VennDiagram", "RColorBrewer","circlize",
-					   "gplots", "rmarkdown", "kableExtra" ,"doParallel", "ldsep", "yaml", "BiocManager")
+multigwas_packages = c("rrBLUP", "parallel","config","dplyr", "stringi","qqman", 
+					   "VennDiagram", "RColorBrewer","circlize", "gplots", "rmarkdown", 
+					   "kableExtra" ,"doParallel", "ldsep", "yaml", "BiocManager", 
+					   "rlang", "ggplot2", "gtable", "scam", "tidyr")
 packagesInstalled    = rownames(installed.packages())
 packagesNotInstalled = setdiff(multigwas_packages, rownames(installed.packages()))  
 
-message ("Packages to install: ", paste (packagesNotInstalled));Sys.sleep (3)
-install.packages (packagesNotInstalled, repos=libRepo)
+message ("\nInstalled packages: ", paste (packagesInstalled, collapse=", "))
+message ("\nPackages to install: ", paste (packagesNotInstalled, collapse=", "));Sys.sleep (3)
+install.packages (packagesNotInstalled, repos=paste0("file://", libRepo))
 
-if (!"multtest" %in% packagesInstalled)
-	BiocManager::install("multtest", site_repository=libRepo)
+#if (!"multtest" %in% packagesInstalled)
+#	BiocManager::install("multtest", site_repository=libRepo)
+
 if (!"GWASpoly" %in% packagesInstalled)
-	install.packages(paste0(libSources,'/GWASpoly_1.3.tar.gz'), lib=libPath, repos=NULL, type="source") 
+	install.packages(paste0(libRepo, "/src/contrib",'/GWASpoly23.tgz'), lib=libPath, repos=NULL, type="source", dependencies=T) 
 #------------------------------------------------------------------------------
-
-
-.libPaths (libPath)
-
-# Copy multiGWAS profile to multiGWAS home
-x=file.copy ("multiGWAS_profile.sh", "..", overwrite=T)
-
-message ("\n------------------------------------------\n")
-message ("For changes to take effect, close and re-open your current shell")
-message ("Then, write multigwas or jmultigwas")
-message ("\n------------------------------------------\n")
 

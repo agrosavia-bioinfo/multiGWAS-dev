@@ -18,6 +18,7 @@ LOGS   <- list ()
 # AUTHOR: Luis Garreta (lgarreta@agrosavia.co) 
 # DATE  : 12/feb/2020
 # LOGS  :   
+	# r1.6: Added best global markers, and only Shesis additive
 	# r1.5: Added cacheDir. Modified ACGTToNumber. Modified report LD. 
 	# r1.3: Improved check input files. Added try catch for running gwas tools.
 	# r1.1: Added create summary table with scored SNPs. Deleted config and pheno files
@@ -77,19 +78,20 @@ main <- function () {
 		colnames (phenotype) = c ("NAMES", traitName)
 		traitConfigFile      = createConfigFileForTrait (phenotype, traitName)
 
-		resultsTables       = mainSingleTrait (traitConfigFile)
+		resultsTables        = mainSingleTrait (traitConfigFile)
 
-		bestSNPsList  = append (bestSNPsList, list (resultsTables$best))
-		allSNPsList   = append (allSNPsList, list (resultsTables$all))
-		allGScoreList = append (allGScoreList, list (resultsTables$gscore))
-		write.csv (resultsTables$gscore, sprintf ("%s/%s-Scores.csv", mainDir, traitName))
+		bestSNPsList         = append (bestSNPsList, list (resultsTables$best))
+		allSNPsList          = append (allSNPsList, list (resultsTables$all))
+		allGScoreList        = append (allGScoreList, list (resultsTables$lgscore))
+		write.csv (resultsTables$lgscore, sprintf ("%s/%s-LGScores.csv", mainDir, traitName))
 		setwd (mainDir)
 	}
 	bestSNPsTable   = do.call ("rbind", bestSNPsList)
 	allSNPsTable    = do.call ("rbind", allSNPsList)
 	allGScoreTable  = do.call ("rbind", allGScoreList)
 
-	createGlobalReport (configFile, bestSNPsTable, allSNPsTable, allGScoreTable) 
+	#createGlobalReport (bestSNPsTable, allSNPsTable, allGScoreTable) 
+	createGlobalReport (bestSNPsTable, allGScoreTable)
 	printLOGS ("")
 }
 
@@ -140,20 +142,82 @@ copyFilesToRunningDir <- function (params, runningDir) {
 }
 
 #-------------------------------------------------------------
-# Write global tables for all and best markers for all traits
+# Write global tables for all, best by tool, and global top50 markers for all traits
 #-------------------------------------------------------------
-createGlobalReport <- function (configFile, bestSNPsTable, allSNPsTable, allGScoreTable){
+createGlobalReport <- function (bestSNPsTable, allSNPsTable){
 	msg ("Writing global report: table with all and best markers for all traits...")
-	outFile = "SCORES-BEST.csv"
+	outFile = "SNPs-BESTN-TOOLS.csv"
 	write.csv (bestSNPsTable, outFile, row.names=F)
 	
-	#outFile = "ALL-SCORES-ALL.csv"
-	#write.csv (allSNPsTable, outFile, row.names=F)
+	allGScoreTable = scoreMarkersGlobal (allSNPsTable)
 
-	outFile = "SCORES-ALL.csv"
-	write.csv (allGScoreTable, outFile, row.names=F)
+	outFile = "SNPs-GSCORES"
+	write.csv (allGScoreTable, paste0(outFile,"-ALL.csv"), row.names=F)
+
+	#---- Top50
+	getToolsMarker <- function (marker, data){
+		flt = filter (data, SNP==marker) 
+		strTools = ""
+		if ("GWASpoly" %in% flt$TOOL)
+			strTools = paste0 (strTools, "GW")
+		if ("GAPIT" %in% flt$TOOL)
+			strTools = ifelse (strTools=="", "GP", paste0(strTools,",GP"))
+		if ("TASSEL" %in% flt$TOOL)
+			strTools = ifelse (strTools=="", "TS", paste0(strTools,",TS"))
+		if ("SHEsis" %in% flt$TOOL)
+			strTools = ifelse (strTools=="", "SH", paste0(strTools,",SH"))
+		return (strTools)
+	}
+
+	dt = allGScoreTable
+	dt = dt[order (dt$GSCORE, decreasing=T),]
+	dtNodups = dt [!duplicated (dt$SNP),]
+
+	dtTop50 = dtNodups
+	if (nrow (dtNodups)>50)
+		dtTop50 = dtNodups[1:50,]
+
+	dtTools = mclapply (dtTop50$SNP, getToolsMarker, dt, mc.cores=detectCores())
+	dtTop50$TOOL=NULL
+	dfTools = cbind (dtTop50, TOOLS=do.call ("rbind", dtTools))
+	write.csv (dfTools, paste0(outFile,"-TOP50.csv"), row.names=F)
 }
 
+#-------------------------------------------------------------
+# Global agroscore taking into account nTools and nTraits
+#-------------------------------------------------------------
+scoreMarkersGlobal <- function (scores) {
+	# Remove previous columns from single trail lgscores
+	scores$ScoresRepl = NULL
+	scores$ScoresSign = NULL
+	scores$ScoresGC = NULL
+
+	# For normalization, get number of tools, traits, componentes
+	nTools  = length (unique (scores$TOOL))
+	nTraits = length (unique (scores$TRAIT))
+	MAXREP  = nTools * nTraits
+	message (MAXREP, " ", nTools, " ", nTraits);
+
+	# Replicability score: Count of SNPs between all SNPs
+	scoresRepl  = scores %>% add_count (SNP, sort=F, name="ScoresRepl");#view (scoresRepl)
+	valuesRepl  = scoresRepl$ScoresRepl/MAXREP;#view (valuesRepl)
+
+	# Significance score: 1 for significants, 0 otherwise
+	valuesSign  = ifelse (scores$SIGNIFICANCE, 1,0)
+	scoresSign  = cbind (scoresRepl, ScoresSign=valuesSign);#view (scoresSign)
+
+	# GC score: Measures closenes of Genomic Control (GC) to 1
+	valuesGC    = 1 - abs (1-scores$GC)
+	scoresGC    = cbind (scoresSign, ScoreGC=valuesGC);#view (scoresGC)
+
+	totalScore  = 0.7*valuesGC + 0.2*valuesSign + 0.1*valuesRepl;#view (valuesRepl)
+
+	gscoreTable = cbind (GSCORE=round (totalScore, 3), scoresGC)
+	gscoreTable = gscoreTable %>% arrange (desc(GSCORE))
+	view (gscoreTable)
+
+	return (gscoreTable)
+}
 #-------------------------------------------------------------
 # Main for a single trait
 #-------------------------------------------------------------
@@ -172,13 +236,13 @@ mainSingleTrait <- function (traitConfigFile) {
 	resultsTables  = createReports (listOfResults, paramsTrait)
 	snpTables.best = data.frame (TRAIT=paramsTrait$trait, resultsTables$best)
 	allScores      = data.frame (TRAIT=paramsTrait$trait, resultsTables$all)
-	allGScores     = data.frame (TRAIT=paramsTrait$trait, resultsTables$gscore)
+	allGScores     = data.frame (TRAIT=paramsTrait$trait, resultsTables$lgscore)
 
 	# Move out files to output dir
 	msg ("Sending trait files to output folders...")
 	moveOutFiles (paramsTrait$outputDir, paramsTrait$reportDir, traitConfigFile, params.phenotypeFile, paramsTrait)
 
-	return (list (best=snpTables.best, all=allScores, gscore=allGScores))
+	return (list (best=snpTables.best, all=allScores, lgscore=allGScores))
 }
 
 #-------------------------------------------------------------
@@ -202,11 +266,13 @@ printLOGS <- function (e) {
 #-------------------------------------------------------------
 runGWASTools <- function (params) {
 	results = NULL
+	tool = ""
+
 	runOneTool <- function (tool, params) {
 		tryCatch ({
 			if (tool=="gwaspoly") 
 				results = runToolGwaspoly (params)
-			else if (tool=="shesis")   
+			else if (tool=="shesis" & params$geneAction=="additive") # Shesis doesn´t handle dominant type  
 				results = runToolShesis (params)
 			else if (tool=="gapit") 
 				results = runToolGapit (params) 
@@ -218,7 +284,7 @@ runGWASTools <- function (params) {
 				stop ("Tool not supported")
 			return (results)
 		},error = function (e){
-			text =  "WARNING: One of the four tools without results."
+			text =  sprintf ("WARNING: Tool %s without results.", tool)
 			message (text)
 			LOGS <<- append (LOGS, text)
 			return (NULL)
@@ -324,8 +390,8 @@ getTraitConfig <- function (traitParamsFile) {
 		createDir (dir)
 		file.copy (traitParamsFile, dir)
 		#file.copy (paramsTrait$genotypeFile, dir )
-		file.symlink (sprintf ("../%s", paramsTrait$genotypeFile), dir)
-		file.copy (paramsTrait$phenotypeFile, dir)
+		file.symlink (sprintf ("%s", paramsTrait$genotypeFile), dir)
+		#file.copy (paramsTrait$phenotypeFile, dir)
 		if (paramsTrait$genotypeFormat %in% c("matrix", "fitpoly", "updog"))
 			runCommand (sprintf ("cp %s %s", paramsTrait$mapFile, dir))
 	}
@@ -347,7 +413,17 @@ selectBestGeneActionModelAllTools <- function (listOfResults, geneAction, nBest)
 	i = 1
 	for (res in listOfResults) {
 		msgmsg ("Best gene action for: ", res$tool)
-		bestScoresTool   = selectBestGeneActionModelTool (res$scores, nBest, res$tool, geneAction)
+
+		dataSNPs = res$scores [,c("MODEL", "GC", "Marker", "CHR", "POS", "P", "SCORE", "THRESHOLD", "DIFF")]; 
+
+		if (geneAction %in% c("all", "additive", "dominant", "general") || tool %in% c("SHEsis")){
+			bestScoresTool = distinct (arrange (dataSNPs, -DIFF), Marker, .keep_all=T)
+		}else if (geneAction == "automatic") {
+			bestScoresTool = selectBestGeneActionModelTool (dataSNPs, nBest, res$tool, geneAction)
+		} else {
+			stop ("ERROR: Unknown gene action type")
+		}
+
 		scoresFileBest   = addLabel (res$scoresFile, "BEST")
 		write.table (bestScoresTool, scoresFileBest, sep="\t", quote=F, row.names=F)
 		listOfResults [[i]]$scoresFile = scoresFileBest
@@ -357,23 +433,8 @@ selectBestGeneActionModelAllTools <- function (listOfResults, geneAction, nBest)
 	return (listOfResults)
 }
 
-
-selectBestGeneActionModelTool <- function (scoresTool, nBest, tool, geneAction) {
-	# Select main columns
-
-	dataSNPs = scoresTool [,c("MODEL", "GC", "Marker", "CHR", "POS", "P", "SCORE", "THRESHOLD", "DIFF")]; 
-
-	if (geneAction=="all") {
-		bestScoresTool = distinct (arrange (dataSNPs, -DIFF), Marker, .keep_all=T)
-		return (bestScoresTool)
-	}
-
-	if (geneAction %in% c("all", "additive", "dominant", "general") || tool %in% c("SHEsis")){
-		bestScoresTool = distinct (arrange (dataSNPs, -DIFF), Marker, .keep_all=T)
-		return (bestScoresTool)
-	}
-		#return (dataSNPs)
-
+# For the "automatic" gene action
+selectBestGeneActionModelTool <- function (dataSNPs, nBest, tool, geneAction) {
 	# Order by nBest, DIFF, GC
 	orderedSNPs = dataSNPs [order (dataSNPs$MODEL,-dataSNPs$DIFF),]; 
 
@@ -449,9 +510,9 @@ runLinkageDisequilibriumAnalysis <- function (listOfResults, nBest, genotypeNumF
 		scoresLD     = scoresLD [1:nBest,]
 		scoresLD     = scoresLD [grepl("LD", scoresLD$Marker),]
 		if (nrow (scoresLD) > 0) {
-				scoresLDFile = addLabel (res$scoresFile, "LD")
-				write.table (scoresLD, scoresLDFile, sep="\t", quote=F, row.names=F)
-				listOfResults [[i]]["scoresLDFile"] = scoresLDFile
+			scoresLDFile = addLabel (res$scoresFile, "LD")
+			write.table (scoresLD, scoresLDFile, sep="\t", quote=F, row.names=F)
+			listOfResults [[i]]["scoresLDFile"] = scoresLDFile
 		}
 		i = i+1
 	}

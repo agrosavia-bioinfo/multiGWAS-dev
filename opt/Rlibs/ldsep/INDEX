@@ -26,6 +26,7 @@ plot.lddf               Plot the output of 'mldest()' or 'sldest()'
                         using 'corrplot()'
 pvcalc                  Calculate prior variances from a matrix of
                         prior genotype probabilities.
+slcor                   Sliding window correlation
 sldest                  Sliding window LD estimation
 uit                     Updog fits on the data from Uitdewilligen et.
                         al. (2013)

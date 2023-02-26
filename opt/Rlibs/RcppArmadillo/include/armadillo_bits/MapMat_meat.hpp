@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -195,6 +197,8 @@ void
 MapMat<eT>::operator=(MapMat<eT>&& x)
   {
   arma_extra_debug_sigprint();
+  
+  if(this == &x)  { return; }
   
   reset();
   
@@ -435,7 +439,7 @@ arma_warn_unused
 MapMat_val<eT>
 MapMat<eT>::operator()(const uword index)
   {
-  arma_debug_check( (index >= n_elem), "MapMat::operator(): index out of bounds" );
+  arma_debug_check_bounds( (index >= n_elem), "MapMat::operator(): index out of bounds" );
   
   return MapMat_val<eT>(*this, index);
   }
@@ -448,7 +452,7 @@ arma_warn_unused
 eT
 MapMat<eT>::operator()(const uword index) const
   {
-  arma_debug_check( (index >= n_elem), "MapMat::operator(): index out of bounds" );
+  arma_debug_check_bounds( (index >= n_elem), "MapMat::operator(): index out of bounds" );
   
   map_type& map_ref = (*map_ptr);
   
@@ -497,7 +501,7 @@ arma_warn_unused
 MapMat_val<eT>
 MapMat<eT>::operator()(const uword in_row, const uword in_col)
   {
-  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
+  arma_debug_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
   
   const uword index = (n_rows * in_col) + in_row;
   
@@ -512,7 +516,7 @@ arma_warn_unused
 eT
 MapMat<eT>::operator()(const uword in_row, const uword in_col) const
   {
-  arma_debug_check( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
+  arma_debug_check_bounds( ((in_row >= n_rows) || (in_col >= n_cols)), "MapMat::operator(): index out of bounds" );
   
   const uword index = (n_rows * in_col) + in_row;
   
@@ -1182,11 +1186,9 @@ SpMat_MapMat_val<eT>::operator=(const eT in_val)
     }
   #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).set(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1217,11 +1219,9 @@ SpMat_MapMat_val<eT>::operator+=(const eT in_val)
     }
   #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).add(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1252,11 +1252,9 @@ SpMat_MapMat_val<eT>::operator-=(const eT in_val)
     }
   #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).sub(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1285,11 +1283,9 @@ SpMat_MapMat_val<eT>::operator*=(const eT in_val)
     }
   #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).mul(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {
@@ -1318,11 +1314,9 @@ SpMat_MapMat_val<eT>::operator/=(const eT in_val)
     }
   #elif (!defined(ARMA_DONT_USE_STD_MUTEX))
     {
-    s_parent.cache_mutex.lock();
+    const std::lock_guard<std::mutex> lock(s_parent.cache_mutex);
     
     (*this).div(in_val);
-    
-    s_parent.cache_mutex.unlock();
     }
   #else
     {

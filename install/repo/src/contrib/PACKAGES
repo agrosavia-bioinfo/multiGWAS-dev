@@ -1,0 +1,46 @@
+Package: ggplot2
+Version: 3.4.0
+Depends: R (>= 3.3)
+Imports: cli, glue, grDevices, grid, gtable (>= 0.1.1), isoband,
+        lifecycle (> 1.0.1), MASS, mgcv, rlang (>= 1.0.0), scales (>=
+        1.2.0), stats, tibble, vctrs (>= 0.5.0), withr (>= 2.5.0)
+Suggests: covr, dplyr, ggplot2movies, hexbin, Hmisc, knitr, lattice,
+        mapproj, maps, maptools, multcomp, munsell, nlme, profvis,
+        quantreg, ragg, RColorBrewer, rgeos, rmarkdown, rpart, sf (>=
+        0.7-3), svglite (>= 1.2.0.9001), testthat (>= 3.1.2), vdiffr
+        (>= 1.0.0), xml2
+Enhances: sp
+License: MIT + file LICENSE
+MD5sum: f528c4558b9077b13477d0d880a8f525
+NeedsCompilation: no
+
+Package: gtable
+Version: 0.3.1
+Depends: R (>= 3.0)
+Imports: grid
+Suggests: covr, testthat, knitr, rmarkdown, ggplot2, profvis
+License: MIT + file LICENSE
+MD5sum: eb8514fe9ed922814a1d250844dabac5
+NeedsCompilation: no
+
+Package: scam
+Version: 1.2-13
+Depends: R (>= 2.15.0), mgcv (>= 1.8-2)
+Imports: methods, stats, graphics, Matrix, splines
+Suggests: nlme
+License: GPL (>= 2)
+MD5sum: 75f5407570960fd77b7e082b06981707
+NeedsCompilation: yes
+
+Package: tidyr
+Version: 1.2.1
+Depends: R (>= 3.1)
+Imports: dplyr (>= 1.0.0), ellipsis (>= 0.1.0), glue, lifecycle,
+        magrittr, purrr, rlang, tibble (>= 2.1.1), tidyselect (>=
+        1.1.0), utils, vctrs (>= 0.3.7)
+LinkingTo: cpp11 (>= 0.4.0)
+Suggests: covr, data.table, jsonlite, knitr, readr, repurrrsive (>=
+        1.0.0), rmarkdown, testthat (>= 3.0.0)
+License: MIT + file LICENSE
+MD5sum: b7043faf842388496c796cddf267dc60
+NeedsCompilation: yes

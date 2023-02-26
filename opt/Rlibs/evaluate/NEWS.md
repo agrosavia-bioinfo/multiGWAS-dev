@@ -1,3 +1,37 @@
+Version 0.20
+================================================================================
+
+- The arguments `keep_message` and `keep_warning` of `evaluate()` can take the value `NA` now, which means `evaluate()` will not capture the messages and they will be sent to the console. This is equivalent to the `FALSE` value before v0.19 (thanks, @gadenbuie, https://github.com/yihui/yihui.org/discussions/1458).
+
+Version 0.19
+================================================================================
+
+- In `evaluate()`, `keep_message` and `keep_warning` will completely drop messages and warnings, respectively, when their values are `FALSE`. Previously messages would still be emitted (to the console) even if they take `FALSE` values.
+
+- Fixed the bug that `parse_all()` fails with line directives (thanks, @ArcadeAntics, #114).
+
+Version 0.18
+================================================================================
+
+- Fixed tests that were still using the deprecated `ggplot2::qplot()`.
+
+Version 0.17
+================================================================================
+
+- Adapted a unit test to the next version of **ggplot2** (thanks, @thomasp85, #113).
+
+Version 0.16
+================================================================================
+
+- Fixed a bug that an empty **ggplot2** plot could be recorded and incorrectly saved (thanks, @sjspielman, rstudio/rmarkdown#2363).
+
+Version 0.15
+================================================================================
+
+- `new_output_handler()` gains a `calling_handlers` argument. These are passed to `withCallingHandlers()` before `evaluate()` captures any conditions.
+
+- Fixed #106: do not assume that `is.atomic(NULL)` returns `TRUE` (thanks, @mmaechler).
+
 Version 0.14
 ================================================================================
 

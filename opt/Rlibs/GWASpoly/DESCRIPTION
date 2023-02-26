@@ -1,13 +1,21 @@
 Package: GWASpoly
 Title: Genome-wide Association Studies for Autopolyploids
-Version: 1.3
-Author: Umesh R. Rosyara, Jeffrey B. Endelman 
+Version: 2.12
+Author: Jeffrey B. Endelman, Umesh R. Rosyara
 Maintainer: Jeffrey Endelman <endelman@wisc.edu>
-Description: Extends the GWAS functionality of the rrBLUP package to handle autopolyploids.  Marker dosage and polyploid genetic models are supported.  
-Imports: rrBLUP, methods
-Suggests: parallel
+Description: Designed for genome-wide association studies in autopolyploids.  
 License: GPL-3
-URL: http://potatobreeding.cals.wisc.edu/software
-NeedsCompilation: no
-Packaged: 2016-08-12 19:34:43 UTC; endelman
-Built: R 4.1.2; ; 2022-12-05 18:09:51 UTC; unix
+LazyData: true
+RoxygenNote: 7.2.3
+Encoding: UTF-8
+Imports: rrBLUP, methods, ggplot2, tidyr, stats, parallel, rlang, scam,
+        Matrix, randomForest
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
+Collate: 'GWASpoly.data.R' 'GWASpoly.K.R' 'GWASpoly.R'
+        'GWASpoly.fitted.R' 'GWASpoly.thresh.R' 'Keff.R' 'LD.plot.R'
+        'VCF2dosage.R' 'design.score.R' 'fit.QTL.R' 'get.QTL.R'
+        'get_x.R' 'make.full.R' 'makeLOCO.R' 'manhattan.plot.R'
+        'qq.plot.R' 'qvalue.R' 'read.GWASpoly.R' 'score.calc.R'
+        'set.K.R' 'set.params.R' 'set.threshold.R' 'write.GWASpoly.R'
+Built: R 4.1.2; ; 2023-01-18 15:52:46 UTC; unix

@@ -1,8 +1,8 @@
 Encoding: UTF-8
 Type: Package
 Package: mixsqp
-Version: 0.3-43
-Date: 2020-05-14
+Version: 0.3-48
+Date: 2022-11-15
 Title: Sequential Quadratic Programming for Fast Maximum-Likelihood
         Estimation of Mixture Proportions
 Authors@R: c(person("Youngseok","Kim",role="aut",
@@ -35,8 +35,8 @@ LinkingTo: Rcpp, RcppArmadillo
 LazyData: true
 NeedsCompilation: yes
 VignetteBuilder: knitr
-RoxygenNote: 7.1.0
-Packaged: 2020-05-14 12:23:40 UTC; pcarbo
+RoxygenNote: 7.1.2
+Packaged: 2022-11-16 02:38:45 UTC; pcarbo
 Author: Youngseok Kim [aut],
   Peter Carbonetto [aut, cre],
   Mihai Anitescu [aut],
@@ -45,5 +45,5 @@ Author: Youngseok Kim [aut],
   Jean Morrison [ctb]
 Maintainer: Peter Carbonetto <peter.carbonetto@gmail.com>
 Repository: CRAN
-Date/Publication: 2020-05-14 14:20:02 UTC
-Built: R 4.1.2; x86_64-pc-linux-gnu; 2022-12-05 18:01:18 UTC; unix
+Date/Publication: 2022-11-16 19:20:12 UTC
+Built: R 4.1.2; x86_64-pc-linux-gnu; 2023-01-18 14:25:56 UTC; unix

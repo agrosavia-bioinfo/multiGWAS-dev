@@ -257,6 +257,7 @@ typeof
 underflowing
 unlist
 useDynamicSymbols
+useNames
 valgrind
 varDiff
 vfcns
@@ -271,3 +272,4 @@ wtd
 xK
 xN
 xlen
+md

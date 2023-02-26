@@ -1,3 +1,49 @@
+# callr 3.7.3
+
+* Errors from callr now include the standard output (in `$stdout`) and
+  standard error (in `stderr`) again. The standard output and error are also
+  printed on error in non-interactive sessions, and a note is printed about
+  them in interactive sessions.
+
+# callr 3.7.2
+
+* New function `add_hook()` to hook into the callr process startup and
+  options. This is for experts and it is also currently experimental
+  (#203, @klmr).
+
+# callr 3.7.1
+
+* When copying existing startup files, an additional newline is appended to
+  protect against a missing newline at the end of the file. This would
+  cause R ignore that line (#205).
+
+* Serialization of objects passed between sessions now uses `compress=FALSE`
+  by default. The default can be changed by setting the
+  `callr.compress_transport` option (#223, @dfalbel).
+
+* We have revamped callr's error objects, with lots of improvements to the
+  output.
+
+# callr 3.7.0
+
+* Reporting errors is much faster now (#185).
+
+* The `user_profile` option of `r_vanilla()` defaults to `FALSE` now (#194).
+
+* It is now possible to set R environment variables (`R_ENVIRON_USER`,
+  `R_PROFILE_USER`, etc.) via the `env` argument (#193).
+
+# callr 3.6.0
+
+* callr now supports starting an R process with a different architecture,
+  so on Windows 64-bit R can start a 32-bit R background process, and
+  vice-versa (#95).
+
+* callr now handles symbolic arguments properly, and does not evaluate them.
+  E.g. `callr::r(function(x) x, list(quote(foobar)))` works now (#175).
+
+* `callr::r_session` does not leak file descriptors now in the sub-process
+  (#184).
 
 # callr 3.5.1
 

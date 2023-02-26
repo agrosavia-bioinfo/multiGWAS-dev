@@ -4,6 +4,8 @@
 # AUTHOR : Luis Garreta (lgarreta@agrosavia.co)
 # DATA   : feb/2020
 # LOG: 
+#	r5.4: Modified scoreMarkers functions (not tested)
+#	r5.3: Fixed get unique models in qqMGWAS
 #	r5.2: Fixed unused factors in gwasResults
 #	r5.1: Fixed chord diagram when no shared SNPs
 #	r5.0: Heuristic to select best gene action model
@@ -41,18 +43,21 @@ main <- function () {
 	source (paste0(HOME,"/main/gwas-preprocessing.R")) 
 
 	params = list ()
-	params$inputDir        = "out/"
-	params$genotypeFile    = "out/filtered-gwasp4-genotype.tbl"
-	params$phenotypeFile   = "out/filtered-gwasp4-phenotype.tbl"
-	params$genotypeNumFile = "out/filtered-gwasp4-genotype-NUM.csv"
+	params$inputDir         = "out/"
+	params$genotypeFile     = "out/filtered-gwasp4-genotype.tbl"
+	params$phenotypeFile    = "out/filtered-gwasp4-phenotype.tbl"
+	params$genotypeNumFile  = "out/filtered-gwasp4-genotype-NUM.csv"
 	params$outputDir        = "out/"
-	params$reportDir       = "report/"
-	params$gwasModel       = "naive"
-	params$nBest           = 10
-	params$ploidy          = 4
-	params$geneAction      = "additive"
+	params$reportDir        = "report/"
+	params$gwasModel        = "naive"
+	params$nBest            = 10
+	params$ploidy           = 4
+	params$geneAction       = "additive"
+	params$nonModelOrganism = FALSE
 
-	tools1 = list(list (tool="GWASpoly", scoresFile="out/tool-GWASpoly-scores-naive.csv")) 
+	tools1 = list(list (tool="GWASpoly", 
+						scoresFile="out/tool-GWASpoly-scores-Naive.csv",
+						scores=read.csv ("out/tool-GWASpoly-scores-Naive.csv", sep="\t"))) 
 
 	tools2 = list(list (tool="GWASpoly", scoresFile="out/tool-GWASpoly-scores-full.csv"), 
 				  list (tool="SHEsis", scoresFile="out/tool-SHEsis-scores-full.csv"))
@@ -68,7 +73,7 @@ main <- function () {
 
 	listOfResultsFile = tools1
 
-	createReports (tools1, params)
+	res = createReports (tools1, params)
 }
 
 #-------------------------------------------------------------
@@ -153,6 +158,37 @@ getAllScores <- function (listOfResults){
 # (p-value > threshold).
 #-------------------------------------------------------------
 scoreMarkers <- function (scores) {
+	# For normalization, get number of tools, traits, componentes
+	nTools  = length (unique (scores$TOOL))
+	nTraits = length (unique (scores$TRAIT))
+	MAXREP  = nTools * nTraits * 3
+
+	# Replicability score: Count of SNPs between all SNPs
+	scoresRepl  = scores %>% add_count (SNP, sort=F, name="ScoresRepl");#view (scoresRepl)
+	valuesRepl  = scoresRepl$ScoresRepl/MAXREP;#view (valuesRepl)
+
+	# Significance score: 1 for significants, 0 otherwise
+	valuesSign   = ifelse (scores$SIGNIFICANCE, 1,0)
+	scoresSign   = cbind (scoresRepl, ScoresSign=valuesSign);#view (scoresSign)
+
+	# GC score: Measures closenes of Genomic Control (GC) to 1
+	valuesGC     = 1 - abs (1-scores$GC)
+	scoresGC     = cbind (scoresSign, ScoreGC=valuesGC);#view (scoresGC)
+
+	# Difference score: Measures difference between threshold and Score 
+	# It's not useful if it isn't normalized by each tool
+	#valuesDiff   = scores$SCORE - scores$THRESHOLD
+	#scoresDiff   = cbind (scoresGC, ScoreDiff=valuesDiff);#view (scoresDiff)
+
+	totalScore = 0.7*valuesGC + 0.2*valuesSign + 0.1*valuesRepl;#view (valuesRepl)
+
+	gscoreTable = cbind (GSCORE=round (totalScore, 3), scoresGC)
+	gscoreTable = gscoreTable %>% arrange (desc(GSCORE))
+
+	return (gscoreTable)
+}
+
+old_scoreMarkers <- function (scores) {
 	# Replicability score: Count of SNPs between all SNPs
 	scoresRepl  = scores %>% add_count (SNP, sort=F, name="ScoresRepl");
 	valuesRepl  = scoresRepl$ScoresRepl
@@ -306,9 +342,9 @@ markersManhattanPlots <- function (listOfResultsFile, commonBest, snpTables, nBe
 #-------------------------------------------------------------
 handleChromosomeNames <- function (chrNames, params) {
 	# Check if non-model genotype (chromosomes renamed with "contig" prefix
-	if (params$nonModelOrganism==TRUE) 
+	if (params$nonModelOrganism==TRUE) {
 		chrs = gsub ("contig","", chrNames)
-	else {
+	}else {
 		# Check if all chromosome names are numeric
 		anyNonNumericChrom <- function (chrs) {
 			suppressWarnings (any (is.na (as.numeric (chrs))))
@@ -330,7 +366,8 @@ handleChromosomeNames <- function (chrNames, params) {
 # QQ plot
 #-------------------------------------------------------------
 qqMGWAS <- function(gwasResults, geneAction) {
-	models = levels (gwasResults$MODEL)
+	models = unique (gwasResults$MODEL)
+
 	#---- local fun -----
 	qqValues <- function (pValues) {
 		scores = -log10 (pValues)
@@ -684,7 +721,7 @@ createChordDiagramSharedSNPs <- function (scoresFile) {
 	getSharedSNPsFromFile <- function (scoresFile, N) {
 		scores = read.table (file=scoresFile, header=T, sep="\t"); 
 		summary = data.frame (add_count (scores, SNP, sort=T)); 
-		sharedDups = summary [summary$n > 1 && summary$SIGNIFICANCE==T,]
+		sharedDups = summary [summary$n > 1 & summary$SIGNIFICANCE==T,]
 		shared = sharedDups [!duplicated (sharedDups$SNP),]
 		return (shared)
 	}
@@ -791,6 +828,6 @@ createDir <- function (newDir) {
 # Call to main function (first lines)
 #-------------------------------------------------------------
 
-#source ("lglib06.R")
+#source ("lglib14.R")
 #main ()
 

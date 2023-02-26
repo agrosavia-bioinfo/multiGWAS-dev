@@ -3,46 +3,48 @@
 # AUTHOR : Luis Garreta (lgarreta@agrosavia.co)
 # DATA   : Feb/2020
 # LOG    :
+	# r2.0 (Jan/2023): Modified to use GWASpoly 2.3. Removed 2-dom models. Removed plots (no merge plots)
 	# r1.1:  Added main. Changed naive kinship matrix to NULL
 	# r1.02:  Hidden warnigns qchisq
 	# r1.01:  Removed annotations from functions. Output results to "out/" dir 
 #-------------------------------------------------------------
+
 main <- function () {
+	options (width=300)
+	DEBUG  = T
+	HOME = Sys.getenv ("MULTIGWAS_HOME")
+	library (parallel)
+	library (ggplot2)
+	library (withr)
+	library (tidyr)
+	.libPaths (paste0(HOME, "/opt/Rlibs"))
 	library (GWASpoly)
-	# New class for gwaspoly
-	setClass ("GWASpolyStruct", slots=c(params="list"), contains="GWASpoly.K")
+	system ("mkdir out")
 
 	args = commandArgs(trailingOnly = TRUE)
+	args = c("genotype-gwaspoly-format-example.csv", "phenotype-tuber_shape-example.csv")
+
 	params = list()
 	params$genotypeFile      = args [1] 
 	params$phenotypeFile     = args [2] 
 	params$trait             = colnames (read.csv (params$phenotypeFile))[2]
 	params$ploidy            = 4
-	params$gwasModel         = "naive"
-	params$snpModels         = c("general","additive","1-dom", "2-dom", "diplo-general", "diplo-additive")
+	params$gwasModel         = "full"
+	#params$snpModels         = c("general","additive","1-dom", "2-dom", "diplo-general", "diplo-additive")
+	params$snpModels         = c("1-dom")
 	params$correctionMethod  = "Bonferroni"
 	params$significanceLevel = 0.05
+	params$geneAction        = "dominant"
 
 	msgmsg("Running GWASpoly...")
-
-	# Read input genotype and genotype (format: "numeric", "AB", or "ACGT")
-
-	# Divert messages to that file
-	data1 <- initGWAS (params$phenotypeFile, params$genotypeFile, params$ploidy, "ACGT")
-
-	# Control population structure
-	data2 = controlPopulationStratification (data1, params$gwasModel)
-
-	# GWAS execution
-	data3 <- runGwaspoly (data2, params, 8)
-	showResults (data3, params$snpModels, params$trait, params$gwasModel, 
-				 params$phenotypeFile, params$ploidy)
+	a=runToolGwaspoly (params)
  }
 
 #-------------------------------------------------------------
 # Set parameters and run GWASpoly tool
 #-------------------------------------------------------------
 runToolGwaspoly <- function (params) {
+	NCORES = detectCores ()-1
 	# Redirect GAPIT output
 	if (DEBUG==F) {
 		log <- file("log-GWASpoly-outputs.log", open = "wt")
@@ -53,45 +55,43 @@ runToolGwaspoly <- function (params) {
 	scoresFile = paste0 ("out/tool-GWASpoly-scores-", params$gwasModel, ".csv")
 
 	# Set gene action models (automatic or specific ones)
-	modelsDiplo  = c ("general","additive","diplo-general", "diplo-additive", "1-dom")
-	modelsTetra  = c (modelsDiplo, "2-dom")
+	# r2.0: Modified by LuisG. Removed 2-dom model as indicated in GWASpoly 2.0
+	modelsGwaspoly  = c ("general","additive","diplo-general", "diplo-additive", "1-dom")
 
 	# Default models whether diplo or tetra 
 	if (params$geneAction %in% c("all","automatic"))
-		if (params$ploidy == 4) 
-			snpModels = modelsTetra
-		else
-			snpModels = modelsDiplo
+		snpModes = modelsGwaspoly
 	else  # But if user specifided just one model
-		if (params$geneAction == "dominant" && params$ploidy==4)
-			snpModels = c ("1-dom", "2-dom")
-		else if (params$geneAction == "dominant" && params$ploidy==2)
+		if (params$geneAction == "dominant")
 			snpModels = c ("1-dom")
 		else
 			snpModels = c(params$geneAction)
 
-	params = append (params, list (snpModels=snpModels))
+	msgmsg ("SNP models: ",  snpModels)
+	params <- append (params, list (snpModels=snpModels))
 
 	# Read input genotype and genotype (format: "numeric", "AB", or "ACGT")
-
-	data1 <- initGWAS (params$phenotypeFile, params$genotypeFile, params$ploidy, "ACGT")
+	data1 <- read.GWASpoly (pheno.file=params$phenotypeFile, geno.file=params$genotypeFile, 
+							ploidy=params$ploidy, format="ACGT", n.traits=1, delim=",")
 
 	# Control population structure
-	data2 = controlPopulationStratification (data1, params$gwasModel)
+	data2 = controlPopulationStratification (data1, params$gwasModel, NCORES)
 
 	# GWAS execution
 	data3 <- runGwaspoly (data2, params, NCORES) 
 
 	# Show results in GWASpoly way
-	msgmsg ("    >>>> GWASpoly showResults...")
-	showResults (data3, params$snpModels, params$trait, params$gwasModel,params$phenotypeFile, params$ploidy)
+	#msgmsg ("    >>>> GWASpoly showResults...")
+	# r2.0: Modified by LuisG. Not mergind manhattan ggplots with default qqplots
+	#showResults (data3, params$snpModels, params$trait, params$gwasModel,params$phenotypeFile, params$ploidy)
 
 	# Get SNP associations
 	scores  = getQTLGWASpoly (data3, params$gwasModel, params$ploidy)
 	colnames (scores)[colnames(scores) %in% c("Chrom","Position")] = c ("CHR","POS")
 
 	scoresColumns = c("MODEL", "GC", "Marker", "CHR", "POS", "P", "SCORE", "THRESHOLD", "DIFF")
-	scores <- data.frame (scores[,scoresColumns], scores [,setdiff (colnames(scores), scoresColumns)])
+	#scores <- data.frame (scores[,scoresColumns], scores [,setdiff (colnames(scores), scoresColumns)])
+	scores <- data.frame (scores[,scoresColumns])
 
 	write.table (file=scoresFile, scores, quote=F, sep="\t", row.names=F)
 
@@ -106,7 +106,7 @@ runToolGwaspoly <- function (params) {
 #-------------------------------------------------------------
 # Control population structure using default Kinship and PCs
 #-------------------------------------------------------------
-controlPopulationStratification <- function (data1, gwasModel) {
+controlPopulationStratification <- function (data1, gwasModel, NCORES) {
 	msgmsg ();msgmsg("Controlling populations structure...")
 
 	if (gwasModel=="naive") {
@@ -114,20 +114,23 @@ controlPopulationStratification <- function (data1, gwasModel) {
 		markers       = data1@pheno [,1]
 		n             = length (markers)
 		kinshipMatrix = matrix (diag (n), n, n, dimnames=list (markers, markers))
-		#dataTmp      <- set.K (data1, K=kinshipMatrix)
-		dataTmp       = set.K (data1, K=NULL)
-		data2         = new ("GWASpolyStruct", dataTmp)
+		data2         = set.K (data1, LOCO=F, K=NULL, n.core=NCORES)
+		gwpParams     = NULL
 	}else if (gwasModel == "full") {
-		msgmsg("    >>>> Using default Kinship and PCs=5 ")
+		msgmsg("    >>>> Correction using default Kinship and GWASpoly 2.0 LOCO method ")
 		kinshipMatrix = NULL
-		dataTmp       = set.K (data1)
-		write.csv (dataTmp@K,"out/GWASpoly-kinship-matrix.csv", quote=F, row.names=T)
-		data2         = new ("GWASpolyStruct", dataTmp)
-		data2@params  = set.params (n.PC=5, fixed=NULL, fixed.type=NULL)
+		# r2.0: Modified by LuisG to use the leave-one-chromosome-out (LOCO) method
+		N = length (data1@pheno [,1])
+		msgmsg ("Population size: ", N)
+		data2       = set.K (data1, LOCO=T, n.core=NCORES )
+		gwpParams  = set.params (geno.freq=1-5/N, fixed=NULL, fixed.type=NULL)
+		write.csv (data2@K,"out/GWASpoly-kinship-matrix.csv", quote=F, row.names=T)
+		# r2.0: Modified by LuisG to use maximum genotype frequency threshold instead PCs
+		#data2@params  = set.params (n.PC=5, fixed=NULL, fixed.type=NULL)
 	}else 
-		stop ("Unknown ploidy number (only 2 or 4)")
+		stop ("Unknown GWAS model (full or naive)")
 
-	return (data2)
+	return (list (data=data2,gwpParams=gwpParams))
 }
 
 #-------------------------------------------------------------
@@ -141,17 +144,20 @@ runGwaspoly <- function (data2, params, NCORES) {
 
  	if (gwasModel %in% c("naive")) {
 		msgmsg(">>>> Without params")
-		data3 = GWASpoly(data2, models=snpModels, traits=NULL, params=NULL, n.core=NCORES)
+		data3 = GWASpoly(data2$data, models=snpModels, traits=NULL, params=NULL, n.core=1)
 	}else {
 		msgmsg(">>>> With params")
-		data3 = GWASpoly(data2, models=snpModels, traits=NULL, params=data2@params)
+		data3 = GWASpoly(data2$data, models=snpModels, traits=NULL, params=data2$gwpParams, n.core=1)
 	}
 	
 	# QTL Detection
-	data4 = set.threshold (data3, method=correctionMethod,level=signLevel,n.core=NCORES)
+	# r2.0: Modified by LuisG. Set correction method to "M.eff" as default
+	data4 = set.threshold (data3, method=correctionMethod, level=signLevel, n.core=NCORES)
 
 	return (data4)
 }
+
+
 
 #-------------------------------------------------------------
 # Plot results
@@ -184,6 +190,7 @@ showResults <- function (data3, models, trait, gwasModel, phenotypeFile, ploidy)
 # Manhattan and QQ plots
 #-------------------------------------------------------------
 plotMahattanQQ <- function (plotFile, models, data5, trait, data3, gwasModel, ploidy) {
+	msgmsg ("Ploting GWASpoly manhattan...")
 	# Create test models for each ref|alt allele if dominant models present
 	testModels = c()
 	for (m in models)
@@ -193,17 +200,25 @@ plotMahattanQQ <- function (plotFile, models, data5, trait, data3, gwasModel, pl
 
 	n = length (testModels)
 
-	pdf (file=plotFile, width=11, height=15)
-	op <- par(mfrow = c(n,2), mar=c(3.5,3.5,2,1), oma=c(0,0,0,0), mgp = c(2.2,1,0)) #MultiGWAS tools
-	for (i in 1:n) {
-		manhattan.plot (data5, trait=trait, model=testModels [i])
-		qqPlot(data3,trait=trait, model=testModels[i], cex=0.3)
-	}
+	msgmsg ("Plotting models: ", testModels, " into: ", plotFile)
 
-	plotTitle = sprintf ("%s gwas %s-ploidy for %s trait", gwasModel, ploidy, trait)  
-	mtext(plotTitle, outer=T,  cex=1.5,  line=0)
-	par(op)
-	dev.off()
+	#pdf (file=plotFile, width=11, height=15)
+	#op <- par(mfrow = c(n,2), mar=c(3.5,3.5,2,1), oma=c(0,0,0,0), mgp = c(2.2,1,0)) #MultiGWAS tools
+	#for (i in 1:n) {
+	#	msgmsg ("Ploting manhattan", i, " ", testModels [i])
+	#	manhattan.plot (data3, trait=trait, model=testModels [i])
+	#	ggsave (paste0 ("plotM",i,".pdf"))
+	#}
+
+	#for (i in 1:n) {
+	#	msgmsg ("Ploting QQ ", i, " ", testModels [i])
+	#	qqPlot(data3,trait=trait, model=testModels[i], cex=0.3)
+	#}
+
+	#plotTitle = sprintf ("%s gwas %s-ploidy for %s trait", gwasModel, ploidy, trait)  
+	#mtext(plotTitle, outer=T,  cex=1.5,  line=0)
+	#par(op)
+	#dev.off()
 }
 
 #-------------------------------------------------------------

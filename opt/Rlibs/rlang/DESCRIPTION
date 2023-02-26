@@ -1,5 +1,5 @@
 Package: rlang
-Version: 0.4.10
+Version: 1.0.6
 Title: Functions for Base Types and Core R and 'Tidyverse' Features
 Description: A toolbox for working with base types, core R features
   like the condition system, and core 'Tidyverse' features like tidy
@@ -15,30 +15,32 @@ Authors@R: c(
            family = "Collet",
            role = "cph", 
            comment = "Author of the embedded xxHash library"),
-    person("RStudio", role = "cph")
+    person(given = "RStudio", role = c("cph", "fnd"))
     )
 License: MIT + file LICENSE
-LazyData: true
 ByteCompile: true
 Biarch: true
-Depends: R (>= 3.3.0)
+Depends: R (>= 3.4.0)
 Imports: utils
-Suggests: cli, covr, crayon, glue, magrittr, methods, pak, pillar,
-        rmarkdown, testthat (>= 3.0.0), vctrs (>= 0.2.3), withr
+Suggests: cli (>= 3.1.0), covr, crayon, fs, glue, knitr, magrittr,
+        methods, pillar, rmarkdown, stats, testthat (>= 3.0.0), tibble,
+        usethis, vctrs (>= 0.2.3), withr
 Enhances: winch
+SystemRequirements: C++11
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1.9000
 URL: https://rlang.r-lib.org, https://github.com/r-lib/rlang
 BugReports: https://github.com/r-lib/rlang/issues
 Config/testthat/edition: 3
+Config/Needs/website: dplyr, tidyverse/tidytemplate
 NeedsCompilation: yes
-Packaged: 2020-12-18 09:35:30 UTC; lionel
+Packaged: 2022-09-23 16:12:48 UTC; lionel
 Author: Lionel Henry [aut, cre],
   Hadley Wickham [aut],
   mikefc [cph] (Hash implementation based on Mike's xxhashlite),
   Yann Collet [cph] (Author of the embedded xxHash library),
-  RStudio [cph]
+  RStudio [cph, fnd]
 Maintainer: Lionel Henry <lionel@rstudio.com>
 Repository: CRAN
-Date/Publication: 2020-12-30 15:00:02 UTC
-Built: R 4.1.2; x86_64-pc-linux-gnu; 2022-12-05 17:53:04 UTC; unix
+Date/Publication: 2022-09-24 05:40:02 UTC
+Built: R 4.1.2; x86_64-pc-linux-gnu; 2023-01-18 14:21:39 UTC; unix

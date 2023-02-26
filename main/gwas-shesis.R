@@ -1,10 +1,51 @@
-
+#!/usr/bin/Rscript
 #-------------------------------------------------------------
 # SHEsis tool
 # Shesis uses a low significance level of 0.01 as their pvalues are inflates
 # LOG: 
+#      v2.0: Added main. Updated to GWASpoly 2.0 (kinshipMatrix)
 #      v1.01: Relatedness using kinship matrix from GWASpoly (>0.9) 
 #-------------------------------------------------------------
+main <- function () {
+	message ("Running Shesis main...")
+
+	source ("lglib14.R")
+	source ("gwas-lib.R")
+	source ("gwas-preprocessing.R")
+	library (GWASpoly)
+	options (width=300)
+	msgmsg <<- message
+	DEBUG  <<- F
+	HOME = Sys.getenv ("MULTIGWAS_HOME")
+	.libPaths (paste0(HOME, "/opt/Rlibs"))
+	system ("mkdir out")
+
+	args = commandArgs(trailingOnly = TRUE)
+	args = c("geno.csv", "pheno.csv")
+
+	params = list()
+	params$genotypeFile      = args [1] 
+	params$phenotypeFile     = args [2] 
+	params$traitType         = "quantitative"
+
+	flt = filterByCommonMarkersSamples (params$genotypeFile, params$phenotypeFile)
+	params$genotypeFile      = flt$genotypeFile
+	params$phenotypeFile     = flt$phenotypeFile
+	params$mapFile           = flt$mapFile
+	params$trait             = flt$trait
+	#params$trait             = colnames (read.csv (params$phenotypeFile))[2]
+
+	params$ploidy            = 4
+	params$gwasModel         = "full"
+	#params$snpModels         = c("general","additive","1-dom", "2-dom", "diplo-general", "diplo-additive")
+	params$snpModels         = c("additive")
+	params$correctionMethod  = "Bonferroni"
+	params$significanceLevel = 0.05
+	params$geneAction        = "additive"
+
+	a=runToolShesis (params)
+ }
+
 runToolShesis <- function (params) 
 {
 	geneAction = params$geneAction
@@ -13,6 +54,7 @@ runToolShesis <- function (params)
 
 	geneAction = "additive"
 
+	msgmsg ("Running Shesis ", params$gwasModel, "...")
 	if (params$gwasModel == "naive") {
 		dataShesis = gwaspolyToShesisGenoPheno (params$genotypeFile, params$phenotypeFile, params$ploidy, params$traitType)
 	} else if (params$gwasModel == "full") {
@@ -54,16 +96,20 @@ getClosestIndividuals <- function (kinshipMatrixFile, params) {
 	createKinshipMatrix <- function (kinshipMatrixFile, params) {
 		data1 = read.GWASpoly (ploidy = params$ploidy, pheno.file = params$phenotypeFile, 
 								geno.file = params$genotypeFile, format = "ACGT", n.traits = 1, delim=",")
-		data2 = set.K (data1)
-		kmat  = data2@K  
+		# r2.0: Modified by LuisG. Added LOCO=F according to GWASpoly 2.0
+		data2 = set.K (data1, LOCO=F)
+		kmat  = data2@K [[1]] 
 		write.csv (kmat, kinshipMatrixFile, quote=F)
 		return (kmat)
 	}
 	#---------------------------------------------------------
-	if (!file.exists (kinshipMatrixFile)) 
+	if (!file.exists (kinshipMatrixFile)) {
+		msgmsg ("Creating kinship matrix for SHEsis (Using GWASpoly function)")
 		kmat = createKinshipMatrix (kinshipMatrixFile, params)
-	else 
+	}else { 
+		msgmsg ("Loading kinship matrix for SHEsis (Using GWASpoly function)")
 		kmat = read.csv (kinshipMatrixFile, row.names=1)
+	}
 
 	kTable = flattenKMat (kmat)
 	closest = kTable$IND2 [abs (kTable$K) > 0.9 ]
@@ -173,11 +219,8 @@ createTableFromBinaryResults <- function (outFile, params, geneAction) {
 	pValues  = results[,"pPearson"] 
 	m        = length (pValues)
 	adj       = adjustPValues (0.01, pValues, params$correctionMethod)
-	message ("Formating 0 ...")
 	pValues   = adj$pValues
-	message ("Formating 1 ...")
 	threshold = adj$threshold
-	message ("Formating 2 ...")
 	scores    = -log10 (pValues)
 
 	# Set Columns
@@ -203,7 +246,7 @@ createTableFromBinaryResults <- function (outFile, params, geneAction) {
 #----------------------------------------------------------
 gwaspolyToShesisGenoPheno <- function (genotypeFile, phenotypeFile, ploidy, traitType) 
 {
-	msgmsg ("    >>>> Writting gwasp to shesis genopheno...")
+	msgmsg ("Writting gwasp to shesis genopheno...")
 	sep <- function (allele) {
 		s="";
 		for (i in 1:ploidy) s=paste0(s, substr (allele,start=i,stop=i)," ");
@@ -231,12 +274,12 @@ gwaspolyToShesisGenoPheno <- function (genotypeFile, phenotypeFile, ploidy, trai
 	pheno [,2]      = impute.mode (pheno [,2])
 	genoPhenoShesis = data.frame (Sample=pheno[,1], Trait=pheno[,2],  allelesMat)
 
-	msgmsg ("    >>>> Writing SHEsis genopheno...")
+	msgmsg ("Writing SHEsis genopheno...")
 	#outFile = "out/filtered-shesis-genopheno.tbl"
 	outFileGenoPheno = addLabel (genotypeFile, "SHESIS-GENOPHENO")
 	write.table (genoPhenoShesis, outFileGenoPheno, quote=F,row.names=F,col.names=F, sep="\t")
 
-	msgmsg ("    >>>> Writing SHEsis marker names...")
+	msgmsg ("Writing SHEsis marker names...")
 	#outFile = "out/filtered-shesis-markernames.tbl"
 	outFileMarkerNames = addLabel (genotypeFile, "SHESIS-MARKERNAMES")
 	write.table (map[,1], outFileMarkerNames, quote=F,row.names=F,col.names=F, sep="\t")
@@ -244,3 +287,4 @@ gwaspolyToShesisGenoPheno <- function (genotypeFile, phenotypeFile, ploidy, trai
 	return (list(genoPhenoFile=outFileGenoPheno, markersFile=outFileMarkerNames))
 }
 
+#main ()

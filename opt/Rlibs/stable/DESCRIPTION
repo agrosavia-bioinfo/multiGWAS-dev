@@ -1,5 +1,5 @@
 Package: stable
-Version: 1.1.4
+Version: 1.1.6
 Title: Probability Functions and Generalized Regression Models for
         Stable Distributions
 Authors@R: c(
@@ -7,26 +7,29 @@ Authors@R: c(
     person("Jim"  , "Lindsey", email="jlindsey@gen.unimaas.nl", role="aut", comment="Jim created this package, Bruce is maintaining the CRAN version"),
     person("Philippe", "Lambert", email="phlambert@stat.ucl.ac.be", role="aut")
     )
-Imports: stabledist
 Depends: R (>= 1.4), rmutil
 Description: Density, distribution, quantile and hazard functions of a
     stable variate; generalized regression models for the parameters
     of a stable distribution. See the README for how to make equivalent calls
-    to those of 'stabledist'. See github for Journal article.
+    to those of 'stabledist' (i.e., Nolan's 0-parameterization and 
+    1-parameterization as detailed in Nolan (2020)). 
+    See github for Lambert and Lindsey 1999 JRSS-C journal article, 
+    which details the parameterization of the Buck (1995) stable.   
+    See the Details section of the `?dstable` help file for context and 
+    references.
 License: GPL (>= 2)
-URL: http://www.commanster.eu/rcode.html
+URL: https://www.commanster.eu/rcode.html
 BugReports: https://github.com/swihart/stable/issues
 Encoding: UTF-8
-LazyData: true
 LazyLoad: true
-RoxygenNote: 6.1.0
+RoxygenNote: 7.1.2
 NeedsCompilation: yes
-Packaged: 2019-02-04 18:54:26 UTC; swihartbj
+Packaged: 2022-03-01 18:54:52 UTC; swihartbj
 Author: Bruce Swihart [cre, aut],
   Jim Lindsey [aut] (Jim created this package, Bruce is maintaining the
     CRAN version),
   Philippe Lambert [aut]
 Maintainer: Bruce Swihart <bruce.swihart@gmail.com>
 Repository: CRAN
-Date/Publication: 2019-02-04 19:20:03 UTC
-Built: R 4.1.2; x86_64-pc-linux-gnu; 2022-12-05 17:59:49 UTC; unix
+Date/Publication: 2022-03-02 00:50:02 UTC
+Built: R 4.1.2; x86_64-pc-linux-gnu; 2023-01-18 14:24:32 UTC; unix

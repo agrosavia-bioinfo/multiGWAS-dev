@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -67,8 +69,14 @@ sp_auxlib::eigs_sym(Col<eT>& eigval, Mat<eT>& eigvec, const SpBase<eT, T1>& X, c
   
   if((arma_config::debug) && (sp_auxlib::rudimentary_sym_check(U.M) == false))
     {
-    if(is_cx<eT>::no )  { arma_debug_warn("eigs_sym(): given matrix is not symmetric"); }
-    if(is_cx<eT>::yes)  { arma_debug_warn("eigs_sym(): given matrix is not hermitian"); }
+    if(is_cx<eT>::no )  { arma_debug_warn_level(1, "eigs_sym(): given matrix is not symmetric"); }
+    if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "eigs_sym(): given matrix is not hermitian"); }
+    }
+  
+  if(arma_config::check_nonfinite && U.M.has_nonfinite())
+    {
+    arma_debug_warn_level(3, "eigs_sym(): detected non-finite elements");
+    return false;
     }
   
   // TODO: investigate optional redirection of "sm" to ARPACK as it's capable of shift-invert;
@@ -114,8 +122,14 @@ sp_auxlib::eigs_sym(Col<eT>& eigval, Mat<eT>& eigvec, const SpBase<eT, T1>& X, c
   
   if((arma_config::debug) && (sp_auxlib::rudimentary_sym_check(U.M) == false))
     {
-    if(is_cx<eT>::no )  { arma_debug_warn("eigs_sym(): given matrix is not symmetric"); }
-    if(is_cx<eT>::yes)  { arma_debug_warn("eigs_sym(): given matrix is not hermitian"); }
+    if(is_cx<eT>::no )  { arma_debug_warn_level(1, "eigs_sym(): given matrix is not symmetric"); }
+    if(is_cx<eT>::yes)  { arma_debug_warn_level(1, "eigs_sym(): given matrix is not hermitian"); }
+    }
+  
+  if(arma_config::check_nonfinite && U.M.has_nonfinite())
+    {
+    arma_debug_warn_level(3, "eigs_sym(): detected non-finite elements");
+    return false;
     }
   
   #if   (defined(ARMA_USE_NEWARP) && defined(ARMA_USE_SUPERLU))
@@ -181,13 +195,13 @@ sp_auxlib::eigs_sym_newarp(Col<eT>& eigval, Mat<eT>& eigvec, const SpMat<eT>& X,
       {
       if(opts.subdim < (n_eigvals + 1))
         {
-        arma_debug_warn("eigs_sym(): opts.subdim must be greater than k; using k+1 instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_sym(): opts.subdim must be greater than k; using k+1 instead of ", opts.subdim);
         ncv = uword(n_eigvals + 1);
         }
       else
       if(opts.subdim > n)
         {
-        arma_debug_warn("eigs_sym(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_sym(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
         ncv = n;
         }
       else
@@ -314,13 +328,13 @@ sp_auxlib::eigs_sym_newarp(Col<eT>& eigval, Mat<eT>& eigvec, const SpMat<eT>& X,
       {
       if(opts.subdim < (n_eigvals + 1))
         {
-        arma_debug_warn("eigs_sym(): opts.subdim must be greater than k; using k+1 instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_sym(): opts.subdim must be greater than k; using k+1 instead of ", opts.subdim);
         ncv = uword(n_eigvals + 1);
         }
       else
       if(opts.subdim > n)
         {
-        arma_debug_warn("eigs_sym(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_sym(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
         ncv = n;
         }
       else
@@ -443,13 +457,13 @@ sp_auxlib::eigs_sym_arpack(Col<eT>& eigval, Mat<eT>& eigvec, const SpMat<eT>& X,
       {
       if(opts.subdim < (n_eigvals + 1))
         {
-        arma_debug_warn("eigs_sym(): opts.subdim must be greater than k; using k+1 instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_sym(): opts.subdim must be greater than k; using k+1 instead of ", opts.subdim);
         ncv = blas_int(n_eigvals + 1);
         }
       else
       if(blas_int(opts.subdim) > n)
         {
-        arma_debug_warn("eigs_sym(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_sym(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
         ncv = n;
         }
       else
@@ -480,6 +494,8 @@ sp_auxlib::eigs_sym_arpack(Col<eT>& eigval, Mat<eT>& eigvec, const SpMat<eT>& X,
     podarray<blas_int> select(ncv); // Logical array of dimension NCV.
     blas_int ldz = n;
     
+    select.zeros();
+    
     // seupd() will output directly into the eigval and eigvec objects.
     eigval.zeros(n_eigvals);
     eigvec.zeros(n, n_eigvals);
@@ -487,7 +503,7 @@ sp_auxlib::eigs_sym_arpack(Col<eT>& eigval, Mat<eT>& eigvec, const SpMat<eT>& X,
     arpack::seupd(&rvec, &howmny, select.memptr(), eigval.memptr(), eigvec.memptr(), &ldz, (eT*) &sigma, &bmat, &n, which, &nev, &tol, resid.memptr(), &ncv, v.memptr(), &ldv, iparam.memptr(), ipntr.memptr(), workd.memptr(), workl.memptr(), &lworkl, &info);
     
     // Check for errors.
-    if(info != 0)  { arma_debug_warn("eigs_sym(): ARPACK error ", info, " in seupd()"); return false; }
+    if(info != 0)  { arma_debug_warn_level(1, "eigs_sym(): ARPACK error ", info, " in seupd()"); return false; }
     
     return (info == 0);
     }
@@ -519,6 +535,12 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
   const unwrap_spmat<T1> U(X.get_ref());
   
   arma_debug_check( (U.M.is_square() == false), "eigs_gen(): given matrix must be square sized" );
+  
+  if(arma_config::check_nonfinite && U.M.has_nonfinite())
+    {
+    arma_debug_warn_level(3, "eigs_gen(): detected non-finite elements");
+    return false;
+    }
   
   // TODO: investigate optional redirection of "sm" to ARPACK as it's capable of shift-invert;
   // TODO: in shift-invert mode, "sm" maps to "lm" of the shift-inverted matrix (with sigma = 0)
@@ -560,6 +582,12 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
   const unwrap_spmat<T1> U(X.get_ref());
   
   arma_debug_check( (U.M.is_square() == false), "eigs_gen(): given matrix must be square sized" );
+  
+  if(arma_config::check_nonfinite && U.M.has_nonfinite())
+    {
+    arma_debug_warn_level(3, "eigs_gen(): detected non-finite elements");
+    return false;
+    }
   
   #if (defined(ARMA_USE_ARPACK) && defined(ARMA_USE_SUPERLU))
     {
@@ -620,13 +648,13 @@ sp_auxlib::eigs_gen_newarp(Col< std::complex<T> >& eigval, Mat< std::complex<T> 
       {
       if(opts.subdim < (n_eigvals + 3))
         {
-        arma_debug_warn("eigs_gen(): opts.subdim must be greater than k+2; using k+3 instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_gen(): opts.subdim must be greater than k+2; using k+3 instead of ", opts.subdim);
         ncv = uword(n_eigvals + 3);
         }
       else
       if(opts.subdim > n)
         {
-        arma_debug_warn("eigs_gen(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_gen(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
         ncv = n;
         }
       else
@@ -802,13 +830,13 @@ sp_auxlib::eigs_gen_arpack(Col< std::complex<T> >& eigval, Mat< std::complex<T> 
       {
       if(opts.subdim < (n_eigvals + 3))
         {
-        arma_debug_warn("eigs_gen(): opts.subdim must be greater than k+2; using k+3 instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_gen(): opts.subdim must be greater than k+2; using k+3 instead of ", opts.subdim);
         ncv = blas_int(n_eigvals + 3);
         }
       else
       if(blas_int(opts.subdim) > n)
         {
-        arma_debug_warn("eigs_gen(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_gen(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
         ncv = n;
         }
       else
@@ -841,7 +869,7 @@ sp_auxlib::eigs_gen_arpack(Col< std::complex<T> >& eigval, Mat< std::complex<T> 
       }
     
     if(info != 0)  { return false; }
-
+    
     // The process has converged, and now we need to recover the actual eigenvectors using neupd().
     blas_int rvec = 1; // .TRUE
     blas_int nev  = blas_int(n_eigvals);
@@ -856,14 +884,16 @@ sp_auxlib::eigs_gen_arpack(Col< std::complex<T> >& eigval, Mat< std::complex<T> 
     blas_int ldz = n;
     podarray<T>        workev(3 * ncv);
     
+    select.zeros();
     dr.zeros();
     di.zeros();
     z.zeros();
+    workev.zeros();
     
     arpack::neupd(&rvec, &howmny, select.memptr(), dr.memptr(), di.memptr(), z.memptr(), &ldz, (T*) &sigmar, (T*) &sigmai, workev.memptr(), &bmat, &n, which, &nev, &tol, resid.memptr(), &ncv, v.memptr(), &ldv, iparam.memptr(), ipntr.memptr(), workd.memptr(), workl.memptr(), &lworkl, rwork.memptr(), &info);
     
     // Check for errors.
-    if(info != 0)  { arma_debug_warn("eigs_gen(): ARPACK error ", info, " in neupd()"); return false; }
+    if(info != 0)  { arma_debug_warn_level(1, "eigs_gen(): ARPACK error ", info, " in neupd()"); return false; }
     
     // Put it into the outputs.
     eigval.set_size(n_eigvals);
@@ -938,6 +968,12 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
   
   arma_debug_check( (U.M.is_square() == false), "eigs_gen(): given matrix must be square sized" );
   
+  if(arma_config::check_nonfinite && U.M.has_nonfinite())
+    {
+    arma_debug_warn_level(3, "eigs_gen(): detected non-finite elements");
+    return false;
+    }
+  
   constexpr std::complex<T> sigma = T(0);
   
   return sp_auxlib::eigs_gen<T, false>(eigval, eigvec, U.M, n_eigvals, form_val, sigma, opts);
@@ -956,6 +992,12 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
   const unwrap_spmat<T1> U(X.get_ref());
   
   arma_debug_check( (U.M.is_square() == false), "eigs_gen(): given matrix must be square sized" );
+  
+  if(arma_config::check_nonfinite && U.M.has_nonfinite())
+    {
+    arma_debug_warn_level(3, "eigs_gen(): detected non-finite elements");
+    return false;
+    }
   
   #if (defined(ARMA_USE_ARPACK) && defined(ARMA_USE_SUPERLU))
     {
@@ -1048,13 +1090,13 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
       {
       if(opts.subdim < (n_eigvals + 3))
         {
-        arma_debug_warn("eigs_gen(): opts.subdim must be greater than k+2; using k+3 instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_gen(): opts.subdim must be greater than k+2; using k+3 instead of ", opts.subdim);
         ncv = blas_int(n_eigvals + 3);
         }
       else
       if(blas_int(opts.subdim) > n)
         {
-        arma_debug_warn("eigs_gen(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
+        arma_debug_warn_level(1, "eigs_gen(): opts.subdim cannot be greater than n_rows; using n_rows instead of ", opts.subdim);
         ncv = n;
         }
       else
@@ -1088,6 +1130,11 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
     blas_int ldz = n;
     podarray<std::complex<T>> workev(2 * ncv);
     
+    select.zeros();
+    d.zeros();
+    z.zeros();
+    workev.zeros();
+    
     // Prepare the outputs; neupd() will write directly to them.
     eigval.zeros(n_eigvals);
     eigvec.zeros(n, n_eigvals);
@@ -1096,7 +1143,7 @@ sp_auxlib::eigs_gen(Col< std::complex<T> >& eigval, Mat< std::complex<T> >& eigv
 (std::complex<T>*) NULL, eigvec.memptr(), &ldz, (std::complex<T>*) &sigma, (std::complex<T>*) NULL, workev.memptr(), &bmat, &n, which, &nev, &tol, resid.memptr(), &ncv, v.memptr(), &ldv, iparam.memptr(), ipntr.memptr(), workd.memptr(), workl.memptr(), &lworkl, rwork.memptr(), &info);
     
     // Check for errors.
-    if(info != 0)  { arma_debug_warn("eigs_gen(): ARPACK error ", info, " in neupd()"); return false; }
+    if(info != 0)  { arma_debug_warn_level(1, "eigs_gen(): ARPACK error ", info, " in neupd()"); return false; }
     
     return (info == 0);
     }
@@ -1137,21 +1184,14 @@ sp_auxlib::spsolve_simple(Mat<typename T1::elem_type>& X, const SpBase<typename 
     
     X = B_expr.get_ref();   // superlu::gssv() uses X as input (the B matrix) and as output (the solution)
     
-    if(A.n_rows > A.n_cols)
+    if(A.is_square() == false)
       {
-      arma_stop_logic_error("spsolve(): solving over-determined systems currently not supported");
       X.soft_reset();
-      return false;
-      }
-    else
-    if(A.n_rows < A.n_cols)
-      {
-      arma_stop_logic_error("spsolve(): solving under-determined systems currently not supported");
-      X.soft_reset();
+      arma_stop_logic_error("spsolve(): solving under-determined / over-determined systems is currently not supported");
       return false;
       }
     
-    arma_debug_check( (A.n_rows != X.n_rows), "spsolve(): number of rows in the given objects must be the same" );
+    arma_debug_check( (A.n_rows != X.n_rows), "spsolve(): number of rows in the given objects must be the same", [&](){ X.soft_reset(); } );
     
     if(A.is_empty() || X.is_empty())
       {
@@ -1160,6 +1200,12 @@ sp_auxlib::spsolve_simple(Mat<typename T1::elem_type>& X, const SpBase<typename 
       }
     
     if(A.n_nonzero == uword(0))  { X.soft_reset(); return false; }
+    
+    if(arma_config::check_nonfinite && (A.has_nonfinite() || X.has_nonfinite()))
+      {
+      arma_debug_warn_level(3, "spsolve(): detected non-finite elements");
+      return false;
+      }
     
     if(arma_config::debug)
       {
@@ -1207,17 +1253,17 @@ sp_auxlib::spsolve_simple(Mat<typename T1::elem_type>& X, const SpBase<typename 
       {
       // std::ostringstream tmp;
       // tmp << "spsolve(): could not solve system; LU factorisation completed, but detected zero in U(" << (info-1) << ',' << (info-1) << ')';
-      // arma_debug_warn(tmp.str());
+      // arma_debug_warn_level(1, tmp.str());
       }
     else
     if(info > int(A.n_cols))
       {
-      arma_debug_warn("spsolve(): memory allocation failure: could not allocate ", (info - int(A.n_cols)), " bytes");
+      arma_debug_warn_level(1, "spsolve(): memory allocation failure: could not allocate ", (info - int(A.n_cols)), " bytes");
       }
     else
     if(info < 0)
       {
-      arma_debug_warn("spsolve(): unknown SuperLU error code from gssv(): ", info);
+      arma_debug_warn_level(1, "spsolve(): unknown SuperLU error code from gssv(): ", info);
       }
     
     // No need to extract the data from x, since it's using the same memory as X
@@ -1265,30 +1311,26 @@ sp_auxlib::spsolve_refine(Mat<typename T1::elem_type>& X, typename T1::pod_type&
     
     const Mat<eT>& B = (B_is_modified) ?  B_copy : B_unwrap;
     
-    if(A.n_rows > A.n_cols)
+    if(A.is_square() == false)
       {
-      arma_stop_logic_error("spsolve(): solving over-determined systems currently not supported");
       X.soft_reset();
-      return false;
-      }
-    else
-    if(A.n_rows < A.n_cols)
-      {
-      arma_stop_logic_error("spsolve(): solving under-determined systems currently not supported");
-      X.soft_reset();
+      arma_stop_logic_error("spsolve(): solving under-determined / over-determined systems is currently not supported");
       return false;
       }
     
-    arma_debug_check( (A.n_rows != B.n_rows), "spsolve(): number of rows in the given objects must be the same" );
+    arma_debug_check( (A.n_rows != B.n_rows), "spsolve(): number of rows in the given objects must be the same", [&](){ X.soft_reset(); } );
     
     X.zeros(A.n_cols, B.n_cols);  // set the elements to zero, as we don't trust the SuperLU spaghetti code
     
-    if(A.is_empty() || B.is_empty())
-      {
-      return true;
-      }
+    if(A.is_empty() || B.is_empty())  { return true; }
     
     if(A.n_nonzero == uword(0))  { X.soft_reset(); return false; }
+    
+    if(arma_config::check_nonfinite && (A.has_nonfinite() || X.has_nonfinite()))
+      {
+      arma_debug_warn_level(3, "spsolve(): detected non-finite elements");
+      return false;
+      }
     
     if(arma_config::debug)
       {
@@ -1334,20 +1376,20 @@ sp_auxlib::spsolve_refine(Mat<typename T1::elem_type>& X, typename T1::pod_type&
     superlu_array_wrangler<T> berr(B.n_cols+1);
     
     superlu::GlobalLU_t glu;
-    arrayops::inplace_set(reinterpret_cast<char*>(&glu), char(0), sizeof(superlu::GlobalLU_t));
+    arrayops::fill_zeros(reinterpret_cast<char*>(&glu), sizeof(superlu::GlobalLU_t));
     
     superlu::mem_usage_t  mu;
-    arrayops::inplace_set(reinterpret_cast<char*>(&mu), char(0), sizeof(superlu::mem_usage_t));
+    arrayops::fill_zeros(reinterpret_cast<char*>(&mu), sizeof(superlu::mem_usage_t));
     
     superlu_stat_wrangler stat;
     
-    char equed[8];       // extra characters for paranoia
-    T    rpg   = T(0);
-    T    rcond = T(0);
-    int  info  = int(0); // Return code.
+    char equed[8] = {};     // extra characters for paranoia
+    T    rpg      = T(0);
+    T    rcond    = T(0);
+    int  info     = int(0); // Return code.
     
-    char  work[8];
-    int  lwork = int(0);  // 0 means superlu will allocate memory
+    char  work[8] = {};
+    int  lwork    = int(0);  // 0 means superlu will allocate memory
     
     arma_extra_debug_print("superlu::gssvx()");
     superlu::gssvx<eT>(&options, a.get_ptr(), perm_c.get_ptr(), perm_r.get_ptr(), etree.get_ptr(), equed, R.get_ptr(), C.get_ptr(), l.get_ptr(), u.get_ptr(), &work[0], lwork, b.get_ptr(), x.get_ptr(), &rpg, &rcond, ferr.get_ptr(), berr.get_ptr(), &glu, &mu, stat.get_ptr(), &info);
@@ -1363,23 +1405,23 @@ sp_auxlib::spsolve_refine(Mat<typename T1::elem_type>& X, typename T1::pod_type&
       {
       // std::ostringstream tmp;
       // tmp << "spsolve(): could not solve system; LU factorisation completed, but detected zero in U(" << (info-1) << ',' << (info-1) << ')';
-      // arma_debug_warn(tmp.str());
+      // arma_debug_warn_level(1, tmp.str());
       }
     else
     if( (info == int(A.n_cols+1)) && (user_opts.allow_ugly) )
       {
-      arma_debug_warn("spsolve(): system is singular to working precision (rcond: ", rcond, ")");
+      arma_debug_warn_level(2, "spsolve(): system is singular to working precision (rcond: ", rcond, ")");
       status = true;
       }
     else
     if(info > int(A.n_cols+1))
       {
-      arma_debug_warn("spsolve(): memory allocation failure: could not allocate ", (info - int(A.n_cols)), " bytes");
+      arma_debug_warn_level(1, "spsolve(): memory allocation failure");
       }
     else
     if(info < 0)
       {
-      arma_debug_warn("spsolve(): unknown SuperLU error code from gssvx(): ", info);
+      arma_debug_warn_level(1, "spsolve(): unknown SuperLU error code from gssvx(): ", info);
       }
     
     // No need to extract the data from x, since it's using the same memory as X
@@ -1444,15 +1486,14 @@ sp_auxlib::spsolve_refine(Mat<typename T1::elem_type>& X, typename T1::pod_type&
 //     
 //     superlu_stat_wrangler stat;
 //     
-//     int   panel_size = superlu::sp_ispec_environ(1);
-//     int   relax      = superlu::sp_ispec_environ(2);
-//     float drop_tol   = 0.0;
-//     int   slu_info   = 0; // Return code.
+//     int panel_size = superlu::sp_ispec_environ(1);
+//     int relax      = superlu::sp_ispec_environ(2);
+//     int slu_info   = 0; // Return code.
 //     
 //     arma_extra_debug_print("superlu::gstrf()");
 //     superlu::get_permutation_c(options.ColPerm, a.get_ptr(), perm_c.get_ptr());
 //     superlu::sp_preorder_mat(&options, a.get_ptr(), perm_c.get_ptr(), etree.get_ptr(), aC.get_ptr());
-//     superlu::gstrf<T>(&options, aC.get_ptr(), drop_tol, relax, panel_size, etree.get_ptr(), NULL, lwork, perm_c.get_ptr(), perm_r.get_ptr(), l.get_ptr(), u.get_ptr(), &Glu, stat.get_ptr(), &slu_info);
+//     superlu::gstrf<T>(&options, aC.get_ptr(), relax, panel_size, etree.get_ptr(), NULL, lwork, perm_c.get_ptr(), perm_r.get_ptr(), l.get_ptr(), u.get_ptr(), &Glu, stat.get_ptr(), &slu_info);
 //     
 //     if(slu_info != 0)  { return T(0); }
 //     
@@ -1914,7 +1955,7 @@ sp_auxlib::spsolve_refine(Mat<typename T1::elem_type>& X, typename T1::pod_type&
       if(out.Stype == superlu::SLU_DN)      { tmp << "SLU_DN";     }
       if(out.Stype == superlu::SLU_NR_loc)  { tmp << "SLU_NR_loc"; }
       
-      arma_debug_warn(tmp.str());
+      arma_debug_warn_level(1, tmp.str());
       arma_stop_runtime_error("internal error: sp_auxlib::destroy_supermatrix()");
       }
     }
@@ -1951,7 +1992,7 @@ sp_auxlib::run_aupd_plain
     n = X.n_rows; // The size of the matrix (should already be set outside).
     blas_int nev = n_eigvals;
     
-    resid.set_size(n);
+    resid.zeros(n);
     
     // Two contraints on NCV: (NCV > NEV) for sym problems or
     // (NCV > NEV + 2) for gen problems and (NCV <= N)
@@ -1964,8 +2005,8 @@ sp_auxlib::run_aupd_plain
     if(ncv < (nev + (sym ? 1 : 3))) { ncv = (nev + (sym ? 1 : 3)); }
     if(ncv > n                    ) { ncv = n;                     }
     
-    v.set_size(n * ncv); // Array N by NCV (output).
-    rwork.set_size(ncv); // Work array of size NCV for complex calls.
+    v.zeros(n * ncv); // Array N by NCV (output).
+    rwork.zeros(ncv); // Work array of size NCV for complex calls.
     ldv = n; // "Leading dimension of V exactly as declared in the calling program."
     
     // IPARAM: integer array of length 11.
@@ -1975,16 +2016,16 @@ sp_auxlib::run_aupd_plain
     iparam(6) = 1; // Mode 1: A * x = lambda * x.
     
     // IPNTR: integer array of length 14 (output).
-    ipntr.set_size(14);
+    ipntr.zeros(14);
     
     // Real work array used in the basic Arnoldi iteration for reverse communication.
-    workd.set_size(3 * n);
+    workd.zeros(3 * n);
     
     // lworkl must be at least 3 * NCV^2 + 6 * NCV.
     lworkl = 3 * (ncv * ncv) + 6 * ncv;
     
     // Real work array of length lworkl.
-    workl.set_size(lworkl);
+    workl.zeros(lworkl);
     
     info = 0; // Set to 0 initially to use random initial vector.
     
@@ -2058,11 +2099,11 @@ sp_auxlib::run_aupd_plain
       
       if(sym)
         {
-        arma_debug_warn("eigs_sym(): ARPACK error ", info, " in saupd()");
+        arma_debug_warn_level(1, "eigs_sym(): ARPACK error ", info, " in saupd()");
         }
       else
         {
-        arma_debug_warn("eigs_gen(): ARPACK error ", info, " in naupd()");
+        arma_debug_warn_level(1, "eigs_gen(): ARPACK error ", info, " in naupd()");
         }
       
       return; // Parent frame can look at the value of info.
@@ -2076,6 +2117,7 @@ sp_auxlib::run_aupd_plain
     arma_ignore(sym);
     arma_ignore(n);
     arma_ignore(tol);
+    arma_ignore(maxiter);
     arma_ignore(resid);
     arma_ignore(ncv);
     arma_ignore(v);
@@ -2122,7 +2164,7 @@ sp_auxlib::run_aupd_shiftinvert
     n = X.n_rows; // The size of the matrix (should already be set outside).
     blas_int nev = n_eigvals;
     
-    resid.set_size(n);
+    resid.zeros(n);
     
     // Two contraints on NCV: (NCV > NEV) for sym problems or
     // (NCV > NEV + 2) for gen problems and (NCV <= N)
@@ -2135,8 +2177,8 @@ sp_auxlib::run_aupd_shiftinvert
     if(ncv < (nev + (sym ? 1 : 3))) { ncv = (nev + (sym ? 1 : 3)); }
     if(ncv > n                    ) { ncv = n;                     }
     
-    v.set_size(n * ncv); // Array N by NCV (output).
-    rwork.set_size(ncv); // Work array of size NCV for complex calls.
+    v.zeros(n * ncv); // Array N by NCV (output).
+    rwork.zeros(ncv); // Work array of size NCV for complex calls.
     ldv = n; // "Leading dimension of V exactly as declared in the calling program."
     
     // IPARAM: integer array of length 11.
@@ -2149,16 +2191,16 @@ sp_auxlib::run_aupd_shiftinvert
     iparam(6) = 3; // Mode 3:  A * x = lambda * M * x, M symmetric semi-definite. OP = inv[A - sigma*M]*M  (A complex)  or  Real_Part{ inv[A - sigma*M]*M }  (A real)  and  B = M.
     
     // IPNTR: integer array of length 14 (output).
-    ipntr.set_size(14);
+    ipntr.zeros(14);
     
     // Real work array used in the basic Arnoldi iteration for reverse communication.
-    workd.set_size(3 * n);
+    workd.zeros(3 * n);
     
     // lworkl must be at least 3 * NCV^2 + 6 * NCV.
     lworkl = 3 * (ncv * ncv) + 6 * ncv;
     
     // Real work array of length lworkl.
-    workl.set_size(lworkl);
+    workl.zeros(lworkl);
     
     info = 0; // Set to 0 initially to use random initial vector.
     
@@ -2216,19 +2258,18 @@ sp_auxlib::run_aupd_shiftinvert
     
     superlu_stat_wrangler stat;
     
-    int   panel_size = superlu::sp_ispec_environ(1);
-    int   relax      = superlu::sp_ispec_environ(2);
-    float drop_tol   = 0.0;
-    int   slu_info   = 0; // Return code.
+    int panel_size = superlu::sp_ispec_environ(1);
+    int relax      = superlu::sp_ispec_environ(2);
+    int slu_info   = 0; // Return code.
     
     arma_extra_debug_print("superlu::gstrf()");
     superlu::get_permutation_c(options.ColPerm, x.get_ptr(), perm_c.get_ptr());
     superlu::sp_preorder_mat(&options, x.get_ptr(), perm_c.get_ptr(), etree.get_ptr(), xC.get_ptr());
-    superlu::gstrf<T>(&options, xC.get_ptr(), drop_tol, relax, panel_size, etree.get_ptr(), NULL, lwork, perm_c.get_ptr(), perm_r.get_ptr(), l.get_ptr(), u.get_ptr(), &Glu, stat.get_ptr(), &slu_info);
+    superlu::gstrf<T>(&options, xC.get_ptr(), relax, panel_size, etree.get_ptr(), NULL, lwork, perm_c.get_ptr(), perm_r.get_ptr(), l.get_ptr(), u.get_ptr(), &Glu, stat.get_ptr(), &slu_info);
     
     if(slu_info != 0)
       {
-      arma_warn("matrix is singular to working precision");
+      arma_debug_warn_level(2, "matrix is singular to working precision");
       info = blas_int(-1);
       return;
       }
@@ -2238,7 +2279,7 @@ sp_auxlib::run_aupd_shiftinvert
     
     if( (x_rcond < std::numeric_limits<eT>::epsilon()) || arma_isnan(x_rcond) )
       {
-      arma_warn("matrix is singular to working precision (rcond: ", x_rcond, ")");
+      arma_debug_warn_level(2, "matrix is singular to working precision (rcond: ", x_rcond, ")");
       info = blas_int(-1);
       return;
       }
@@ -2313,11 +2354,11 @@ sp_auxlib::run_aupd_shiftinvert
       
       if(sym)
         {
-        arma_debug_warn("eigs_sym(): ARPACK error ", info, " in saupd()");
+        arma_debug_warn_level(2, "eigs_sym(): ARPACK error ", info, " in saupd()");
         }
       else
         {
-        arma_debug_warn("eigs_gen(): ARPACK error ", info, " in naupd()");
+        arma_debug_warn_level(2, "eigs_gen(): ARPACK error ", info, " in naupd()");
         }
       
       return; // Parent frame can look at the value of info.
@@ -2331,6 +2372,7 @@ sp_auxlib::run_aupd_shiftinvert
     arma_ignore(sym);
     arma_ignore(n);
     arma_ignore(tol);
+    arma_ignore(maxiter);
     arma_ignore(resid);
     arma_ignore(ncv);
     arma_ignore(v);

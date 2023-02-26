@@ -1,3 +1,79 @@
+# processx 3.8.0
+
+* processx error stacks are better now. They have ANSI hyperlinks for
+  function calls to their manual pages, and they also print operators
+  better.
+
+* processx now does not mark standard streams as close-on-exec on Unix,
+  as this causes problems when calling `system()` from an R subprocess
+  (https://github.com/r-lib/callr/issues/236).
+
+# processx 3.7.0
+
+* New functions for creating portable FIFOs and Unix socket connections.
+  See `conn_create_fifo()`, `conn_create_unix_socket()` and
+  `vignettes/internals.Rmd` for documentation. These functions are currently
+  experimental.
+
+# processx 3.6.1
+
+* processx now closes file unneeded file descriptors when redirecting
+  the standard output and error, in the client file.
+
+* processx errors now do not have `rlang_error` and `rlang_trace` classes,
+  because they are actually not compatible with rlang errors and traces.
+
+# processx 3.6.0
+
+* processx now gives better error messages, and better stack traces.
+
+# processx 3.5.3
+
+* `run()` now sets `stderr` to `NULL` in the result (instead of an empty
+  string), if the standard error was redirected to the standard output.
+  This also fixes an error when interrupting a `run()` with a redirected
+  standard error.
+
+* processx now does not fail if the current working directory contains
+  a non-ASCII character on Windows, and `getwd()` returns a short path
+  for it (#313).
+
+# processx 3.5.2
+
+* `run()` now does not truncate stdout and stderr when the output
+  contains multibyte characters (#298, @infotroph).
+
+* processx now compiles with custom compilers that enable OpenMP (#297).
+
+* processx now avoids a race condition when the working directory is
+  changed right after starting a process, potentially before the
+  sub-process is initialized (#300).
+
+* processx now works with non-ASCII path names on non-UTF-8 Unix platforms
+  (#293).
+
+# processx 3.5.1
+
+* Fix a potential failure when polling curl file descriptors on Windows.
+
+# processx 3.5.0
+
+* You can now append environment variables to the ones set in the current
+  process if you include `"current"` in the value of `env`, in `run()`
+  and for `process$new()`: `env = c("current", NEW = "newvalue")` (#232).
+
+* Sub-processes can now inherit the standard input, output and error from
+  the main R process, by setting the corresponding argument to an empty
+  string. E.g. `run("ls", stdout = "")` (#72).
+
+* `run()` is now much faster with large standard output or standard
+  error (#286).
+
+* `run()` can now discard the standard output and error or redirect
+  them to file(s), instead of collecting them.
+
+* processx now optionally uses the cli package to color error messages
+  and stack traces, instead of crayon.
 
 # processx 3.4.5
 
@@ -11,7 +87,7 @@
 
 * processx now works correctly for non-ASCII commands and arguments passed
   in the native encoding, on Windows (#261, #262, #263, #264).
-  
+
 * Providing multiple environment variables now works on windows (#267).
 
 # processx 3.4.3

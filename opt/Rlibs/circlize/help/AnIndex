@@ -37,6 +37,7 @@ circos.heatmap.initialize	circos.heatmap.initialize
 circos.heatmap.link	circos.heatmap.link
 circos.info	circos.info
 circos.initialize	circos.initialize
+circos.initializeCircularGenome	circos.initializeCircularGenome
 circos.initializeWithIdeogram	circos.initializeWithIdeogram
 circos.labels	circos.labels
 circos.lines	circos.lines

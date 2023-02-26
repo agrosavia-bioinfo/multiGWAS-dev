@@ -26,6 +26,7 @@ comp_dens_conv.normalmix	comp_dens_conv.normalmix
 comp_dens_conv.unimix	comp_dens_conv.unimix
 comp_mean	comp_mean
 comp_mean.normalmix	comp_mean.normalmix
+comp_mean.tnormalmix	comp_mean.tnormalmix
 comp_mean2	comp_mean2
 comp_postmean	comp_postmean
 comp_postmean2	comp_postmean2
@@ -33,6 +34,7 @@ comp_postprob	comp_postprob
 comp_postsd	comp_postsd
 comp_sd	comp_sd
 comp_sd.normalmix	comp_sd.normalmix
+comp_sd.tnormalmix	comp_sd.tnormalmix
 cxxMixSquarem	cxxMixSquarem
 dens	dens
 dens_conv	dens_conv
@@ -103,6 +105,7 @@ prune	prune
 qval.from.lfdr	qval.from.lfdr
 set_data	set_data
 summary.ash	summary.ash
+tnormalmix	tnormalmix
 unimix	unimix
 vcdf_post	vcdf_post
 w_mixEM	w_mixEM

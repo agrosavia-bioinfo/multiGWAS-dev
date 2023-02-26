@@ -1,4 +1,42 @@
 ------------------------------------------------------------------------------
+version 1.1.10
+------------------------------------------------------------------------------
+
+  * fix clang15 warnings
+  * fix latex escape note
+  * fix version info from new.md note
+
+------------------------------------------------------------------------------
+version 1.1.9
+------------------------------------------------------------------------------
+
+  * reset license from GPL-2 to the original GPL (>=2)
+
+------------------------------------------------------------------------------
+version 1.1.8
+------------------------------------------------------------------------------
+
+  * fixed typo in C code causing i386 error in rmutil::int()
+
+------------------------------------------------------------------------------
+version 1.1.7
+------------------------------------------------------------------------------
+
+  * added Author information of TOMS614/INTHP
+  * fixed void / SEXP registration issue (LTO / valgrind additional issues)
+  * fixed 0-sized array warning 
+  * Fixed call_R Issue https://github.com/swihart/rmutil/issues/11
+  * Updated links to https: where appropriate
+
+------------------------------------------------------------------------------
+version 1.1.6
+------------------------------------------------------------------------------
+
+  * Fixed call_R Issue https://github.com/swihart/rmutil/issues/11
+  * Updated links to https: where appropriate
+
+
+------------------------------------------------------------------------------
 version 1.1.5
 ------------------------------------------------------------------------------
 
@@ -53,7 +91,7 @@ version 1.1.1
 version 1.1.0
 ------------------------------------------------------------------------------
 
-## Major changes ##
+Major changes
 
 Passed CRAN checks and is back on CRAN.  Please see github page 
 https://github.com/swihart/rmutil to see the changes required 

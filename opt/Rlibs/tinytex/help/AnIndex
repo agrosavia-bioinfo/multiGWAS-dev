@@ -1,3 +1,4 @@
+tinytex-package	tinytex-package
 check_installed	check_installed
 copy_tinytex	copy_tinytex
 install_tinytex	install_tinytex
@@ -9,6 +10,7 @@ parse_packages	parse_packages
 pdflatex	latexmk
 reinstall_tinytex	install_tinytex
 r_texmf	r_texmf
+tinytex	tinytex-package
 tinytex_root	install_tinytex
 tlmgr	tlmgr
 tlmgr_conf	tlmgr
@@ -18,6 +20,7 @@ tlmgr_remove	tlmgr
 tlmgr_repo	tlmgr
 tlmgr_search	tlmgr
 tlmgr_update	tlmgr
+tlmgr_version	tlmgr
 tl_pkgs	tl_pkgs
 tl_sizes	tl_sizes
 uninstall_tinytex	install_tinytex

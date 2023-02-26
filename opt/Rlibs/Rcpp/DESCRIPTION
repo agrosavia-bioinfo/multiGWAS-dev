@@ -1,9 +1,9 @@
 Package: Rcpp
 Title: Seamless R and C++ Integration
-Version: 1.0.6
-Date: 2021-01-14
+Version: 1.0.9
+Date: 2022-07-02
 Author: Dirk Eddelbuettel, Romain Francois, JJ Allaire, Kevin Ushey, Qiang Kou,
- Nathan Russell, Douglas Bates and John Chambers
+ Nathan Russell, Inaki Ucar, Douglas Bates and John Chambers
 Maintainer: Dirk Eddelbuettel <edd@debian.org>
 Description: The 'Rcpp' package provides R functions as well as C++ classes which
  offer a seamless integration of R and C++. Many R data types and objects can be
@@ -16,14 +16,15 @@ Description: The 'Rcpp' package provides R functions as well as C++ classes whic
  <doi:10.1080/00031305.2017.1375990>); see 'citation("Rcpp")' for details.
 Imports: methods, utils
 Suggests: tinytest, inline, rbenchmark, pkgKitten (>= 0.1.2)
-URL: http://www.rcpp.org, https://dirk.eddelbuettel.com/code/rcpp.html,
+URL: https://www.rcpp.org,
+        https://dirk.eddelbuettel.com/code/rcpp.html,
         https://github.com/RcppCore/Rcpp
 License: GPL (>= 2)
 BugReports: https://github.com/RcppCore/Rcpp/issues
 MailingList: rcpp-devel@lists.r-forge.r-project.org
 RoxygenNote: 6.1.1
 NeedsCompilation: yes
-Packaged: 2021-01-14 13:44:02 UTC; edd
+Packaged: 2022-07-02 15:34:02 UTC; edd
 Repository: CRAN
-Date/Publication: 2021-01-15 13:10:13 UTC
-Built: R 4.1.2; x86_64-pc-linux-gnu; 2022-12-05 17:54:15 UTC; unix
+Date/Publication: 2022-07-08 23:10:06 UTC
+Built: R 4.1.2; x86_64-pc-linux-gnu; 2023-01-18 14:21:11 UTC; unix

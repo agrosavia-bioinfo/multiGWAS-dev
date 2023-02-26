@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -19,7 +21,7 @@
 
 
 //! Class for storing data required to construct or apply operations to a subcube
-//! (i.e. where the subcube starts and ends as well as a reference/pointer to the original cube),
+//! (ie. where the subcube starts and ends as well as a reference/pointer to the original cube),
 template<typename eT>
 class subview_cube : public BaseCube< eT, subview_cube<eT> >
   {
@@ -109,6 +111,8 @@ class subview_cube : public BaseCube< eT, subview_cube<eT> >
   inline void replace(const eT old_val, const eT new_val);
   
   inline void clean(const pod_type threshold);
+  
+  inline void clamp(const eT min_val, const eT max_val);
   
   inline void fill(const eT val);
   inline void zeros();

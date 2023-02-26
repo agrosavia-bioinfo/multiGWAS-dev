@@ -1,4 +1,6 @@
 corrplot-package	corrplot-package
+COL1	COL1
+COL2	COL2
 colorlegend	colorlegend
 cor.mtest	cor.mtest
 corrMatOrder	corrMatOrder

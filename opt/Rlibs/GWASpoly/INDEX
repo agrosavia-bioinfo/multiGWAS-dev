@@ -1,13 +1,18 @@
-GWASpoly                GWAS
-GWASpoly-class          Class 'GWASpoly'
-GWASpoly.K-class        Class 'GWASpoly.K'
-GWASpoly.fitted-class   Class 'GWASpoly.fitted'
-GWASpoly.thresh-class   Class 'GWASpoly.thresh'
-get.QTL                 Extracts significant QTL
-manhattan.plot          Manhattan plot
-qq.plot                 QQ plot
-read.GWASpoly           Read in data for GWASpoly
-set.K                   Creates kinship (relationship) matrix
-set.params              Set parameters for GWAS
-set.threshold           Sets the significance threshold.
-write.GWASpoly          Write GWASpoly results to file
+GWASpoly                Compute marker significance scores
+GWASpoly.K-class        S4 class with genotypes, phenotypes, and
+                        polygenic covariance
+GWASpoly.data-class     S4 class with genotype and phenotype data
+GWASpoly.fitted-class   S4 class with results from genome-wide scan
+GWASpoly.thresh-class   S4 class with results from genome-wide scan and
+                        detection threshold
+LD.plot                 Plot LD vs distance
+VCF2dosage              Convert VCF to dosage file
+fit.QTL                 Test markers as QTL under backward elimination
+get.QTL                 Extract significant QTL
+manhattan.plot          Create Manhattan plot
+qq.plot                 Quantile-Quantile (QQ) Plot
+read.GWASpoly           Read in marker and phenotype data
+set.K                   Set covariance matrix for polygenic effect
+set.params              Set parameters
+set.threshold           Set the significance threshold
+write.GWASpoly          Write results to file

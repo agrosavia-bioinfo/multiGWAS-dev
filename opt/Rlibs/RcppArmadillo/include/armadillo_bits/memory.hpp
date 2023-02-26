@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -49,7 +51,11 @@ memory::acquire(const uword n_elem)
   
   eT* out_memptr;
   
-  #if   defined(ARMA_USE_TBB_ALLOC)
+  #if   defined(ARMA_ALIEN_MEM_ALLOC_FUNCTION)
+    {
+    out_memptr = (eT *) ARMA_ALIEN_MEM_ALLOC_FUNCTION(sizeof(eT)*n_elem);
+    }
+  #elif defined(ARMA_USE_TBB_ALLOC)
     {
     out_memptr = (eT *) scalable_malloc(sizeof(eT)*n_elem);
     }
@@ -71,6 +77,8 @@ memory::acquire(const uword n_elem)
     }
   #elif defined(_MSC_VER)
     {
+    // Windoze is too primitive to handle C++17 std::aligned_alloc()
+    
     //out_memptr = (eT *) malloc(sizeof(eT)*n_elem);
     //out_memptr = (eT *) _aligned_malloc( sizeof(eT)*n_elem, 16 );  // lives in malloc.h
     
@@ -102,7 +110,11 @@ memory::release(eT* mem)
   {
   if(mem == nullptr)  { return; }
   
-  #if   defined(ARMA_USE_TBB_ALLOC)
+  #if   defined(ARMA_ALIEN_MEM_FREE_FUNCTION)
+    {
+    ARMA_ALIEN_MEM_FREE_FUNCTION( (void *)(mem) );
+    }
+  #elif defined(ARMA_USE_TBB_ALLOC)
     {
     scalable_free( (void *)(mem) );
     }

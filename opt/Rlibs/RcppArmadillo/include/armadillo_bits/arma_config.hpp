@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -29,23 +31,44 @@ struct arma_config
   
   
   #if defined(ARMA_OPENMP_THRESHOLD)
-    static constexpr uword mp_threshold = (sword(ARMA_OPENMP_THRESHOLD) > 0) ? uword(ARMA_OPENMP_THRESHOLD) : 240;
+    static constexpr uword mp_threshold = (sword(ARMA_OPENMP_THRESHOLD) > 0) ? uword(ARMA_OPENMP_THRESHOLD) : 320;
   #else
-    static constexpr uword mp_threshold = 240;
+    static constexpr uword mp_threshold = 320;
   #endif
   
   
   #if defined(ARMA_OPENMP_THREADS)
-    static constexpr uword mp_threads = (sword(ARMA_OPENMP_THREADS) > 0) ? uword(ARMA_OPENMP_THREADS) : 10;
+    static constexpr uword mp_threads = (sword(ARMA_OPENMP_THREADS) > 0) ? uword(ARMA_OPENMP_THREADS) : 8;
   #else
-    static constexpr uword mp_threads = 10;
+    static constexpr uword mp_threads = 8;
   #endif
   
   
-  #if defined(ARMA_USE_ATLAS)
-    static constexpr bool atlas = true;
+  #if defined(ARMA_OPTIMISE_BAND)
+    static constexpr bool optimise_band = true;
   #else
-    static constexpr bool atlas = false;
+    static constexpr bool optimise_band = false;
+  #endif
+  
+  
+  #if defined(ARMA_OPTIMISE_SYMPD)
+    static constexpr bool optimise_sympd = true;
+  #else
+    static constexpr bool optimise_sympd = false;
+  #endif
+  
+  
+  #if defined(ARMA_OPTIMISE_INVEXPR)
+    static constexpr bool optimise_invexpr = true;
+  #else
+    static constexpr bool optimise_invexpr = false;
+  #endif
+  
+  
+  #if defined(ARMA_CHECK_NONFINITE)
+    static constexpr bool check_nonfinite = true;
+  #else
+    static constexpr bool check_nonfinite = false;
   #endif
   
   
@@ -60,6 +83,13 @@ struct arma_config
     static constexpr bool blas = true;
   #else
     static constexpr bool blas = false;
+  #endif
+  
+  
+  #if defined(ARMA_USE_ATLAS)
+    static constexpr bool atlas = true;
+  #else
+    static constexpr bool atlas = false;
   #endif
   
   
@@ -121,6 +151,8 @@ struct arma_config
       || defined(ARMA_EXTRA_SPMAT_PROTO) || defined(ARMA_EXTRA_SPMAT_MEAT) \
       || defined(ARMA_EXTRA_SPCOL_PROTO) || defined(ARMA_EXTRA_SPCOL_MEAT) \
       || defined(ARMA_EXTRA_SPROW_PROTO) || defined(ARMA_EXTRA_SPROW_MEAT) \
+      || defined(ARMA_ALIEN_MEM_ALLOC_FUNCTION) \
+      || defined(ARMA_ALIEN_MEM_FREE_FUNCTION) \
       )
     static constexpr bool extra_code = true;
   #else
@@ -139,6 +171,13 @@ struct arma_config
     static constexpr bool cxx17 = true;
   #else
     static constexpr bool cxx17 = false;
+  #endif
+  
+  
+  #if defined(ARMA_HAVE_CXX20)
+    static constexpr bool cxx20 = true;
+  #else
+    static constexpr bool cxx20 = false;
   #endif
   
   
@@ -175,6 +214,16 @@ struct arma_config
   #else
     static constexpr bool hidden_args = false;
   #endif
+  
+  
+  #if defined(ARMA_DONT_ZERO_INIT)
+    static constexpr bool zero_init = false;
+  #else
+    static constexpr bool zero_init = true;
+  #endif
+  
+  
+  static constexpr uword warn_level = (sword(ARMA_WARN_LEVEL) > 0) ? uword(ARMA_WARN_LEVEL) : 0;
   };
 
 

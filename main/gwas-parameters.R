@@ -153,6 +153,7 @@ checkParameterGeneAction <- function (params) {
 		message ("---------------------------------------------------------------------------")
 		params$geneAction = "additive"
 	}
+	params$geneAction   = tolower (params$geneAction) 
 	return (params)
 }
 

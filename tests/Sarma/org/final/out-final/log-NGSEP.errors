@@ -1,8 +1,0 @@
-May 11, 2022 2:59:19 PM ngsep.vcf.VCFConverter logParameters
-INFO: Input file: /home/lg/agrosavia/GWAS-TOOL/multiGWAS-dev/users/Sarma/data/final/RNsarma-Final-Geno.vcf
-Prefix for output files: /home/lg/agrosavia/GWAS-TOOL/multiGWAS-dev/users/Sarma/data/final/RNsarma-Final-Geno
-Formats:
- GWASPoly
-
-May 11, 2022 3:00:13 PM ngsep.vcf.VCFConverter run
-INFO: Process finished

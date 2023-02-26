@@ -1,3 +1,32 @@
+Changes in version 0.4.15
+-----------------------------------------------------------------------
+
+* low-level graphics functions won't change the index of sector and track.
+* `colorRamp2()`: add `hcl_palette` argument.
+* `highlight.sectors()`: argument `padding` supports to wrap the vector with `I()`.
+* fixed a bug of wrong calculation of label positions in `circos.genomicLabels()`.
+
+
+Changes in version 0.4.14
+-----------------------------------------------------------------------
+
+* `circos.genomicTrackPlotRegion()`: add `na.rm = TRUE` when using `range()`.
+* fixed a bug of `na.col` in `circos.heatmap()`.
+* improved default order of link end when duplicated rows exist in the data frame.
+* `circos.heatmap()`: add `cell.border`, `cell.lty` and `cell.lwd` arguments.
+* add `circos.initializeCircularGenome()`.
+* `chordDiagram()`: `link.sort` allows to sort links based on the original orders 
+   in the input data frame.
+* label facing is correct now for y-axis when circos.par$xaxis.clock.wise is FALSE.
+* `rand_color()`: add a new argument `friendly` that generate eye-friendly random colors.
+* `chordDiagram()`: fixed a bug when a sector have all zero values and after scaling
+  they changed to NA.
+
+Changes in version 0.4.13
+-----------------------------------------------------------------------
+
+* `circos.link()`: add offset when testing whether the link is out of the sector.
+
 Changes in version 0.4.12
 -----------------------------------------------------------------------
 * `smartAlign()`: improved boxes overlapping

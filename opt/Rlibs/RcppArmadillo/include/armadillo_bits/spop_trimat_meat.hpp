@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -153,7 +155,7 @@ spop_trimatu_ext::apply_noalias(SpMat<eT>& out, const SpMat<eT>& A, const uword 
   const uword n_rows = A.n_rows;
   const uword n_cols = A.n_cols;
   
-  arma_debug_check( ((row_offset > 0) && (row_offset >= n_rows)) || ((col_offset > 0) && (col_offset >= n_cols)), "trimatu(): requested diagonal is out of bounds" );
+  arma_debug_check_bounds( ((row_offset > 0) && (row_offset >= n_rows)) || ((col_offset > 0) && (col_offset >= n_cols)), "trimatu(): requested diagonal is out of bounds" );
   
   if(A.n_nonzero == 0)  { out.zeros(n_rows, n_cols); return; }
   
@@ -269,7 +271,7 @@ spop_trimatl_ext::apply_noalias(SpMat<eT>& out, const SpMat<eT>& A, const uword 
   const uword n_rows = A.n_rows;
   const uword n_cols = A.n_cols;
   
-  arma_debug_check( ((row_offset > 0) && (row_offset >= n_rows)) || ((col_offset > 0) && (col_offset >= n_cols)), "trimatl(): requested diagonal is out of bounds" );
+  arma_debug_check_bounds( ((row_offset > 0) && (row_offset >= n_rows)) || ((col_offset > 0) && (col_offset >= n_cols)), "trimatl(): requested diagonal is out of bounds" );
   
   if(A.n_nonzero == 0)  { out.zeros(n_rows, n_cols); return; }
   

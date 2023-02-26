@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -274,14 +276,22 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   // access the i-th element; if there is nothing at element i, 0 is returned
   arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator[] (const uword i);
   arma_inline arma_warn_unused eT                   operator[] (const uword i) const;
+  
   arma_inline arma_warn_unused SpMat_MapMat_val<eT> at         (const uword i);
   arma_inline arma_warn_unused eT                   at         (const uword i) const;
+  
   arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator() (const uword i);
   arma_inline arma_warn_unused eT                   operator() (const uword i) const;
   
   // access the element at the given row and column; if there is nothing at that position, 0 is returned
+  #if defined(__cpp_multidimensional_subscript)
+  arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator[] (const uword in_row, const uword in_col);
+  arma_inline arma_warn_unused eT                   operator[] (const uword in_row, const uword in_col) const;
+  #endif
+  
   arma_inline arma_warn_unused SpMat_MapMat_val<eT> at         (const uword in_row, const uword in_col);
   arma_inline arma_warn_unused eT                   at         (const uword in_row, const uword in_col) const;
+  
   arma_inline arma_warn_unused SpMat_MapMat_val<eT> operator() (const uword in_row, const uword in_col);
   arma_inline arma_warn_unused eT                   operator() (const uword in_row, const uword in_col) const;
   
@@ -299,8 +309,9 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   inline arma_warn_unused bool is_hermitian() const;
   inline arma_warn_unused bool is_hermitian(const typename get_pod_type<eT>::result tol) const;
   
-  inline arma_warn_unused bool has_inf() const;
-  inline arma_warn_unused bool has_nan() const;
+  inline arma_warn_unused bool has_inf()       const;
+  inline arma_warn_unused bool has_nan()       const;
+  inline arma_warn_unused bool has_nonfinite() const;
   
   arma_inline arma_warn_unused bool in_range(const uword i) const;
   arma_inline arma_warn_unused bool in_range(const span& x) const;
@@ -338,6 +349,8 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   
   inline const SpMat& clean(const pod_type threshold);
   
+  inline const SpMat& clamp(const eT min_val, const eT max_val);
+  
   inline const SpMat& zeros();
   inline const SpMat& zeros(const uword in_elem);
   inline const SpMat& zeros(const uword in_rows, const uword in_cols);
@@ -358,6 +371,7 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   inline const SpMat& sprandn(const SizeMat& s,                         const double density);
   
   inline void reset();
+  inline void reset_cache();
   
   //! don't use this unless you're writing internal Armadillo code
   inline void reserve(const uword in_rows, const uword in_cols, const uword new_n_nonzero);
@@ -376,13 +390,13 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   // saving and loading
   // TODO: implement auto_detect for sparse matrices
   
-  inline arma_cold bool save(const std::string   name, const file_type type = arma_binary, const bool print_status = true) const;
-  inline arma_cold bool save(const csv_name&     spec, const file_type type =   csv_ascii, const bool print_status = true) const;
-  inline arma_cold bool save(      std::ostream& os,   const file_type type = arma_binary, const bool print_status = true) const;
+  inline arma_cold bool save(const std::string   name, const file_type type = arma_binary) const;
+  inline arma_cold bool save(const csv_name&     spec, const file_type type =   csv_ascii) const;
+  inline arma_cold bool save(      std::ostream& os,   const file_type type = arma_binary) const;
   
-  inline arma_cold bool load(const std::string   name, const file_type type = arma_binary, const bool print_status = true);
-  inline arma_cold bool load(const csv_name&     spec, const file_type type =   csv_ascii, const bool print_status = true);
-  inline arma_cold bool load(      std::istream& is,   const file_type type = arma_binary, const bool print_status = true);
+  inline arma_cold bool load(const std::string   name, const file_type type = arma_binary);
+  inline arma_cold bool load(const csv_name&     spec, const file_type type =   csv_ascii);
+  inline arma_cold bool load(      std::istream& is,   const file_type type = arma_binary);
   
   inline arma_cold bool quiet_save(const std::string   name, const file_type type = arma_binary) const;
   inline arma_cold bool quiet_save(const csv_name&     spec, const file_type type =   csv_ascii) const;
@@ -701,7 +715,7 @@ class SpMat : public SpBase< eT, SpMat<eT> >
   
   public:
   
-  #ifdef ARMA_EXTRA_SPMAT_PROTO
+  #if defined(ARMA_EXTRA_SPMAT_PROTO)
     #include ARMA_INCFILE_WRAP(ARMA_EXTRA_SPMAT_PROTO)
   #endif
   };

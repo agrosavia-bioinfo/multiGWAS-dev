@@ -1,9 +1,7 @@
-// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
-/* :tabSize=4:indentSize=4:noTabs=false:folding=explicit:collapseFolds=1: */
-//
+
 // RcppArmadillo.h: Rcpp/Armadillo glue
 //
-// Copyright (C)  2010 - 2016  Dirk Eddelbuettel, Romain Francois and Douglas Bates
+// Copyright (C)  2010 - 2021  Dirk Eddelbuettel, Romain Francois and Douglas Bates
 //
 // This file is part of RcppArmadillo.
 //
@@ -28,15 +26,14 @@
 #endif
 
 // Set up actual #include <armadillo> after first #include <RcppArmadilloConfig> and more config
-#include <RcppArmadilloForward.h>
+#include <RcppArmadillo/interface/RcppArmadilloForward.h>
 
 // Now automatically include Rcpp as well
 #include <Rcpp.h>
 
 // Remaining RcppArmadillo code
-#include <RcppArmadilloWrap.h>
-#include <RcppArmadilloAs.h>
-#include <RcppArmadilloSugar.h>
+#include <RcppArmadillo/interface/RcppArmadilloWrap.h>
+#include <RcppArmadillo/interface/RcppArmadilloAs.h>
+#include <RcppArmadillo/interface/RcppArmadilloSugar.h>
 
 #endif
-

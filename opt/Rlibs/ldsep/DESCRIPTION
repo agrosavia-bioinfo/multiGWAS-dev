@@ -1,6 +1,6 @@
 Package: ldsep
 Title: Linkage Disequilibrium Shrinkage Estimation for Polyploids
-Version: 2.0.2
+Version: 2.1.5
 Authors@R: 
     person(given = "David",
            family = "Gerard",
@@ -16,12 +16,12 @@ Description: Estimate haplotypic or composite pairwise linkage disequilibrium
     for shrinkage estimation. The main functions are ldfast(), ldest(), mldest(),
     sldest(), plot.lddf(), format_lddf(), and ldshrink(). Details of the methods
     are available in Gerard (2021a) <doi:10.1111/1755-0998.13349>
-    and Gerard (2021b) <doi:10.1101/2021.02.08.430270>.
+    and Gerard (2021b) <doi:10.1038/s41437-021-00462-5>.
 License: GPL-3
 BugReports: https://github.com/dcgerard/ldsep/issues
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
 LinkingTo: Rcpp, RcppArmadillo
 Imports: Rcpp, foreach, doParallel, ashr, corrplot, lpSolve, abind,
         modeest, matrixStats
@@ -30,9 +30,9 @@ Suggests: testthat, covr, knitr, rmarkdown, updog (>= 2.0.2),
 Depends: R (>= 2.10)
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2021-02-15 13:58:31 UTC; dgerard
+Packaged: 2022-10-18 14:34:18 UTC; dgerard
 Author: David Gerard [aut, cre] (<https://orcid.org/0000-0001-9450-5023>)
 Maintainer: David Gerard <gerard.1787@gmail.com>
 Repository: CRAN
-Date/Publication: 2021-02-17 09:00:15 UTC
-Built: R 4.1.2; x86_64-pc-linux-gnu; 2022-12-05 18:05:31 UTC; unix
+Date/Publication: 2022-10-18 22:52:43 UTC
+Built: R 4.1.2; x86_64-pc-linux-gnu; 2023-01-18 14:29:19 UTC; unix

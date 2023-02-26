@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+// 
 // Copyright 2008-2016 Conrad Sanderson (http://conradsanderson.id.au)
 // Copyright 2008-2016 National ICT Australia (NICTA)
 // 
@@ -811,7 +813,7 @@ arma_inline
 eT&
 diagview<eT>::operator()(const uword ii)
   {
-  arma_debug_check( (ii >= n_elem), "diagview::operator(): out of bounds" );
+  arma_debug_check_bounds( (ii >= n_elem), "diagview::operator(): out of bounds" );
   
   return (const_cast< Mat<eT>& >(m)).at(ii+row_offset, ii+col_offset);
   }
@@ -823,7 +825,7 @@ arma_inline
 eT
 diagview<eT>::operator()(const uword ii) const
   {
-  arma_debug_check( (ii >= n_elem), "diagview::operator(): out of bounds" );
+  arma_debug_check_bounds( (ii >= n_elem), "diagview::operator(): out of bounds" );
   
   return m.at(ii+row_offset, ii+col_offset);
   }
@@ -855,7 +857,7 @@ arma_inline
 eT&
 diagview<eT>::operator()(const uword row, const uword col)
   {
-  arma_debug_check( ((row >= n_elem) || (col > 0)), "diagview::operator(): out of bounds" );
+  arma_debug_check_bounds( ((row >= n_elem) || (col > 0)), "diagview::operator(): out of bounds" );
   
   return (const_cast< Mat<eT>& >(m)).at(row+row_offset, row+col_offset);
   }
@@ -867,39 +869,9 @@ arma_inline
 eT
 diagview<eT>::operator()(const uword row, const uword col) const
   {
-  arma_debug_check( ((row >= n_elem) || (col > 0)), "diagview::operator(): out of bounds" );
+  arma_debug_check_bounds( ((row >= n_elem) || (col > 0)), "diagview::operator(): out of bounds" );
   
   return m.at(row+row_offset, row+col_offset);
-  }
-
-
-
-template<typename eT>
-arma_inline
-const Op<diagview<eT>,op_htrans>
-diagview<eT>::t() const
-  {
-  return Op<diagview<eT>,op_htrans>(*this);
-  }
-
-
-
-template<typename eT>
-arma_inline
-const Op<diagview<eT>,op_htrans>
-diagview<eT>::ht() const
-  {
-  return Op<diagview<eT>,op_htrans>(*this);
-  }
-
-
-
-template<typename eT>
-arma_inline
-const Op<diagview<eT>,op_strans>
-diagview<eT>::st() const
-  {
-  return Op<diagview<eT>,op_strans>(*this);
   }
 
 
@@ -933,6 +905,38 @@ diagview<eT>::replace(const eT old_val, const eT new_val)
       val = (val == old_val) ? new_val : val;
       }
     }
+  }
+
+
+
+template<typename eT>
+inline
+void
+diagview<eT>::clean(const typename get_pod_type<eT>::result threshold)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.clean(threshold);
+  
+  (*this).operator=(tmp);
+  }
+
+
+
+template<typename eT>
+inline
+void
+diagview<eT>::clamp(const eT min_val, const eT max_val)
+  {
+  arma_extra_debug_sigprint();
+  
+  Mat<eT> tmp(*this);
+  
+  tmp.clamp(min_val, max_val);
+  
+  (*this).operator=(tmp);
   }
 
 

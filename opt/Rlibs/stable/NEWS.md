@@ -1,4 +1,21 @@
 #------------------------------------------------------------------------------
+#version 1.1.6
+#------------------------------------------------------------------------------
+
+  * refined the previous version's references to contemporary stable distribution 
+  literature to help contextualize this package in the /man files and README
+  * add example to bottom of README
+
+#------------------------------------------------------------------------------
+#version 1.1.5
+#------------------------------------------------------------------------------
+
+  * http: --> https: where appropriate
+  * added references to contemporary stable distribution literature to help
+  contextualize this package to /man files and README
+  * Removed imports: stabledist from DESCRIPTION
+  
+#------------------------------------------------------------------------------
 #version 1.1.4
 #------------------------------------------------------------------------------
 
@@ -46,7 +63,7 @@ https://github.com/swihart/stable/issues.
 
 **Above this line will be News/Changes for `stable` only**
 
-**Below this line corresponds to [changes.txt](http://www.commanster.eu/rcode/changes.txt), which was Jim Lindsey's file for
+**Below this line corresponds to [changes.txt](https://www.commanster.eu/rcode/changes.txt), which was Jim Lindsey's file for
 detailing changes across the v1.0 packages `rmutil`, `repeated`, `gnlm`, `growth`, `event`, `stable` on his homepage**
 
 #------------------------------------------------------------------------------

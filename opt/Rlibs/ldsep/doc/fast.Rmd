@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 
 # Abstract
 
-We demonstrate our new moment-based linkage disequilibrium (LD) estimators, as implemented in the `ldfast()` function. These methods are described in detail in Gerard (2021). The following code chunks are only evaluated if `updog` is installed with a version of at least 2.0.2.
+We demonstrate our new moment-based linkage disequilibrium (LD) estimators, as implemented in the `ldfast()` function. These methods are described in detail in Gerard (2021). The following code chunks are only evaluated if `{updog}` is installed with a version of at least 2.0.2.
 
 # Analysis
 
@@ -35,7 +35,7 @@ data("uit", package = "ldsep")
 class(uit)
 ```
 
-We need the posterior probabilities for each genotype for each individual at each SNP. In `updog`, this corresponds to the `Pr_n` variables in its output, where `n` varies from 0 to the ploidy. We can use `updog::format_multidog()` to extract these values into an array with the proper dimensions.
+We need the posterior probabilities for each genotype for each individual at each SNP. In `{updog}`, this corresponds to the `Pr_n` variables in its output, where `n` varies from 0 to the ploidy. We can use `updog::format_multidog()` to extract these values into an array with the proper dimensions.
 
 ```{r}
 ploidy <- 4
@@ -44,16 +44,13 @@ class(gp)
 dim(gp)
 ```
 
-The first dimension indexes the SNPs, the second dimension indexes the individuals, and the third dimension indexes the possible dosages. So `gp[i, j, k]` contains the posterior probability that individual `j` has dosage `k-1` at SNP `i`. You can use other genotyping programs to obtain these posterior probabilities, but they have to be formatted as an array with the dimensions in the correct order (SNPs by individuals by dosages).
+The first dimension indexes the SNPs, the second dimension indexes the individuals, and the third dimension indexes the possible dosages. So `gp[i, j, k]` contains the posterior probability that individual `j` has dosage `k-1` at SNP `i`.
 
-If you only have genotype log-likelihoods, we can normalize these to posterior probabilities (assuming a uniform prior) with `ldsep::gl_to_gp()`.
+You can use other genotyping programs to obtain these posterior probabilities, but they have to be formatted as an array with the dimensions in the correct order (SNPs by individuals by dosages). 
 
-```{r}
-gl <- format_multidog(x = uit, varname = paste0("logL_", 0:ploidy))
-gp2 <- gl_to_gp(gl = gl)
-```
+**However**, in order for these estimates to perform well, you need to use posterior genotype probabilities that have been calculated using adaptive priors, i.e. empirical/hierarchical Bayes approaches. There are many approaches that do this, such as [`{updog}`](https://cran.r-project.org/package=updog), [`{polyRAD}`](https://cran.r-project.org/package=polyRAD), [`{fitPoly}`](https://cran.r-project.org/package=fitPoly), or [`{SuperMASSA}`](https://github.com/guilherme-pereira/vcf2sm). Note that GATK uses a uniform prior, so would be inappropriate for use in `ldfast()`.
 
-Let's use our original genotype posterior probabilities (`gp`) to estimate LD since the prior used there was adaptive to the data (but for large sample sizes this does not really matter).
+Let's use our genotype posterior probabilities (`gp`) to estimate LD.
 
 ```{r}
 ldout <- ldfast(gp = gp, type = "r2")
@@ -96,4 +93,4 @@ Other LD estimators are available: `D`, `Dprime`, `r`, and `z`. See the help fil
 
 # References
 
--  Gerard, David. "Scalable Bias-corrected Linkage Disequilibrium Estimation Under Genotype Uncertainty." _bioRxiv_. (2021) [doi:10.1101/2021.02.08.430270](https://doi.org/10.1101/2021.02.08.430270)
+- Gerard, David (2021). "Scalable Bias-corrected Linkage Disequilibrium Estimation Under Genotype Uncertainty." _Heredity_, *127*(4), 357--362. [doi:10.1038/s41437-021-00462-5](https://doi.org/10.1038/s41437-021-00462-5).

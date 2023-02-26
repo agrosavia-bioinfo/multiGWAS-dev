@@ -51,7 +51,7 @@ mout <- multidog(refmat = refmat,
                  model = "norm")
 
 ## ---- warning=FALSE, fig.show="hold", out.width="25%", results='hide'---------
-plot(mout, indices = sample(1:nrow(subuit), 3))
+plot(mout, indices = c(1, 14, 19))
 
 ## -----------------------------------------------------------------------------
 msub <- filter_snp(x = mout, pmax(Pr_0, Pr_1, Pr_2, Pr_3, Pr_4) < 0.95)
